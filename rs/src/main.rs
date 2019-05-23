@@ -8,6 +8,7 @@ use glium::{Surface, Display};
 use glium::uniforms::AsUniformValue;
 use core::borrow::Borrow;
 use glium::buffer::BufferType::TransformFeedbackBuffer;
+use glutin::VirtualKeyCode;
 
 #[derive(Component)]
 #[storage(VecStorage)]
@@ -255,6 +256,33 @@ impl<'a> System<'a> for RendererSystem {
     }
 }
 
+#[derive(Default, Debug)]
+struct PlayerInputState {   // shared resource
+    input: (f32, f32)
+}
+#[derive(Component)]
+#[storage(VecStorage)]
+struct PlayerComponent {}   // per-player component
+struct PlayerInputSystem {  // runs updates...
+}
+impl<'a> System<'a> for PlayerInputSystem {
+    type SystemData = (
+        Read<'a, PlayerInputState>,
+        ReadStorage<'a, PlayerComponent>,
+        WriteStorage<'a, Transform>
+    );
+    fn run (&mut self, (input, player, mut transform): Self::SystemData) {
+//        let input = &*input;
+        for (player, transform) in (&player, &mut transform).join() {
+            println!("updating player...");
+//            transform.pos = (
+//                transform.pos.0 + input.input.0,
+//                transform.pos.1 + input.input.1
+//            );
+        }
+    }
+}
+
 struct GameLoopState { running: bool }
 struct GameLoop <'a, 'b> {
     ecs: specs::World,
@@ -269,6 +297,7 @@ fn make_box (ecs: &mut specs::World) -> specs::Entity {
         .with(Renderable {})
         .with(Material { color: Color { r: 1.0, g: 0.0, b: 0.2, a: 1.0 } })
         .with(Shape::Box (BoxShape { w: 10.0, h: 10.0 }))
+//        .with(PlayerComponent {})
         .build();
     entity
 }
@@ -286,6 +315,7 @@ impl<'a, 'b> GameLoop <'a, 'b> {
         ecs.register::<Shape>();
         ecs.register::<Renderable>();
         ecs.add_resource(Camera::new());
+        ecs.add_resource(PlayerInputState { input: (0.0, 0.0) });
         let _ = make_box(&mut ecs);
         let mut renderer = RendererSystem::new(display);
         let mut dispatcher = DispatcherBuilder::new()
@@ -297,15 +327,33 @@ impl<'a, 'b> GameLoop <'a, 'b> {
         while self.state.running {
             self.dispatcher.dispatch(&mut self.ecs.res);
             let state = &mut self.state;
+            let mut player_input = self.ecs.write_resource::<PlayerInputState>();
+            player_input.input = (0.0, 0.0);
             self.events_loop.poll_events(|ev| {
                 match ev {
                     glutin::Event::WindowEvent { event, .. } => match event {
                         glutin::WindowEvent::CloseRequested => state.running = false,
+                        glutin::WindowEvent::KeyboardInput {
+                            input: glutin::KeyboardInput {
+                                state: glutin::ElementState::Pressed,
+                                virtual_keycode: Some(key),
+                                ..
+                            }, ..
+                        } => {
+                            match key {
+                                VirtualKeyCode::A => player_input.input.0 -= 0.1,
+                                VirtualKeyCode::D => player_input.input.0 += 0.1,
+                                VirtualKeyCode::S => player_input.input.1 -= 0.1,
+                                VirtualKeyCode::W => player_input.input.1 += 0.1,
+                                _ => ()
+                            }
+                        },
                         _ => ()
                     },
                     _ => ()
                 }
-            })
+            });
+//            println!("player input: {:?}", &*player_input);
         }
     }
 }
