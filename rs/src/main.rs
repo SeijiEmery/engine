@@ -7,6 +7,7 @@ use specs::prelude::*;
 use glium::{Surface, Display};
 use glium::uniforms::AsUniformValue;
 use core::borrow::Borrow;
+use glium::buffer::BufferType::TransformFeedbackBuffer;
 
 #[derive(Component)]
 #[storage(VecStorage)]
@@ -15,6 +16,25 @@ struct Transform {
     scale: f32,
     rot: f32,
 }
+impl Transform {
+    fn new () -> Transform {
+        return Transform {
+            pos: (0.0, 0.0),
+            scale: 1.0,
+            rot: 0.0
+        }
+    }
+    fn with_pos (&self, x: f32, y: f32) -> Transform {
+        return Transform { pos: (x, y), scale: self.scale, rot: self.rot };
+    }
+    fn with_scale (&self, s: f32) -> Transform {
+        return Transform { pos: self.pos, scale: s, rot: self.rot };
+    }
+    fn with_angle (&self, r: f32) -> Transform {
+        return Transform { pos: self.pos, scale: self.scale, rot: r };
+    }
+}
+
 struct Color { r: f32, g: f32, b: f32, a: f32 }
 impl AsUniformValue for Color {
     fn as_uniform_value (&self) -> glium::uniforms::UniformValue {
@@ -75,9 +95,10 @@ impl BoxRenderer {
         let vertex_shader_src = r#"
             #version 410
             in vec2 position;
-            uniform mat4 mvp_matrix;
+//            uniform mat4 mvp_matrix;
             void main () {
-                gl_Position = mvp_matrix * vec4(position, 0.0, 1.0);
+//                gl_Position = mvp_matrix * vec4(position, 0.0, 1.0);
+                gl_Position = vec4(position, 0.0, 1.0);
             }
         "#;
         let fragment_shader_src = r#"
@@ -101,13 +122,13 @@ impl Renderer<BoxShape> for BoxRenderer {
     fn draw (&self, target: &mut glium::Frame, camera: &Camera, material: &Material, shape: &BoxShape) {
         let color = &material.color;
         let uniforms = glium::uniform! {
-            mvp_matrix: [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0 , 0.0, 0.0, 1.0],
-            ],
-            out_color: [ color.r, color.g, color.b, color.a ],
+//            mvp_matrix: [
+//                [1.0, 0.0, 0.0, 0.0],
+//                [0.0, 1.0, 0.0, 0.0],
+//                [0.0, 0.0, 1.0, 0.0],
+//                [0.0 , 0.0, 0.0, 1.0],
+//            ],
+            material_color: [ color.r, color.g, color.b, color.a ],
         };
         target.draw(&self.vertex_buffer, self.indices, &self.shader, &uniforms,
             &Default::default()).unwrap();
@@ -242,6 +263,16 @@ struct GameLoop <'a, 'b> {
     state: GameLoopState
 }
 
+fn make_box (ecs: &mut specs::World) -> specs::Entity {
+    let entity = ecs.create_entity()
+        .with(Transform::new().with_pos(0.0, 0.0))
+        .with(Renderable {})
+        .with(Material { color: Color { r: 1.0, g: 0.0, b: 0.2, a: 1.0 } })
+        .with(Shape::Box (BoxShape { w: 10.0, h: 10.0 }))
+        .build();
+    entity
+}
+
 impl<'a, 'b> GameLoop <'a, 'b> {
     fn new () -> GameLoop<'a, 'b> {
         use glium::glutin;
@@ -255,7 +286,7 @@ impl<'a, 'b> GameLoop <'a, 'b> {
         ecs.register::<Shape>();
         ecs.register::<Renderable>();
         ecs.add_resource(Camera::new());
-
+        let _ = make_box(&mut ecs);
         let mut renderer = RendererSystem::new(display);
         let mut dispatcher = DispatcherBuilder::new()
             .with_thread_local(renderer)
