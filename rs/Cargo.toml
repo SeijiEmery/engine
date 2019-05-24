@@ -1,5 +1,5 @@
 [package]
-name = "engine-rs"
+name = "engine_rs"
 version = "0.1.0"
 authors = ["Seiji Emery <seijiemery@gmail.com>"]
 edition = "2018"
@@ -10,3 +10,4 @@ specs-derive = "*"
 serde = "1.0.91"
 glium = "*"
 glutin = "*"
+cgmath = "*"
