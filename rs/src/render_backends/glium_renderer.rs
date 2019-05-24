@@ -20,7 +20,6 @@ impl GliumRenderer {
 }
 impl Renderer for GliumRenderer {
     fn draw (&mut self, item: RenderItem) {
-        println!("Rendering {:?}", item);
         match item.primitive {
             //            RenderPrimitive::SolidBox(Color) => println!("unimplemented: render solid box!"),
             //            RenderPrimitive::SolidCircle(Color) => println!("unimplemented: render solid circle!"),
@@ -72,9 +71,8 @@ impl ShapeRenderer {
             out vec2 local_coords;
             uniform mat4 transform;
             void main () {
-//                gl_Position = vec4(position, 0.0, 1.0);
                 gl_Position = transform * vec4(position, 0.0, 1.0);
-                local_coords = position;
+                local_coords = position * 2;
             }
         "#;
         let shape_fragment_shader = r#"
@@ -91,17 +89,27 @@ impl ShapeRenderer {
                 out_color = color;
             }
             subroutine(shape_shader) void draw_solid_circle () {
-                if (dot(local_coords, local_coords) > 0.5) {
-                     discard;
-                } else {
+                if (dot(local_coords, local_coords) < 1.0) {
                     out_color = color;
+                } else {
+                    discard;
                 }
             }
             subroutine(shape_shader) void draw_outline_box () {
-                out_color = color;
+                vec2 from_center = abs(local_coords);
+                if (max(from_center.x, from_center.y) >= 1.0 - outline_width) {
+                    out_color = color;
+                } else {
+                    discard;
+                }
             }
             subroutine(shape_shader) void draw_outline_circle () {
-                out_color = color;
+                float from_center = dot(local_coords, local_coords);
+                if (from_center <= 1.0 && from_center >= 1.0 - outline_width) {
+                    out_color = color;
+                } else {
+                    discard;
+                }
             }
             void main () {
                 shading_mode();
@@ -116,7 +124,7 @@ impl ShapeRenderer {
         let uniforms = uniform! [
             transform: array4x4(transform),
             shading_mode: (mode, glium::program::ShaderStage::Fragment),
-            outline: outline,
+            outline_width: outline,
             color: color
         ];
         frame.draw(&self.quad_vertices, self.quad_indices, &self.shape_shader, &uniforms, &Default::default());
