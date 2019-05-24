@@ -12,7 +12,7 @@ pub struct GliumRenderer {
 }
 impl GliumRenderer {
     pub fn new (display: glium::Display) -> GliumRenderer {
-        let frame = display.draw();
+        let mut frame = display.draw(); frame.set_finish();
         let shape_renderer = ShapeRenderer::new(&display);
         return GliumRenderer { display, shape_renderer, frame }
     }
@@ -66,7 +66,7 @@ impl ShapeRenderer {
 
         let shape_vertex_shader = r#"
             #version 410
-            in vec4 position;
+            in vec2 position;
             out vec2 local_coords;
             uniform mat4 transform;
             void main () {
