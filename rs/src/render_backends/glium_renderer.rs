@@ -2,6 +2,7 @@ use crate::renderer;
 pub use renderer::*;
 use crate::engine_utils::color::{Color};
 use glium::Surface;
+use cgmath::conv::{array4x4};
 #[macro_use]
 use crate::glium;
 
@@ -71,8 +72,8 @@ impl ShapeRenderer {
             out vec2 local_coords;
             uniform mat4 transform;
             void main () {
-                gl_Position = vec4(position, 0.0, 1.0);
-//                gl_Position = transform * vec4(position, 0.0, 1.0);
+//                gl_Position = vec4(position, 0.0, 1.0);
+                gl_Position = transform * vec4(position, 0.0, 1.0);
                 local_coords = position;
             }
         "#;
@@ -111,9 +112,9 @@ impl ShapeRenderer {
         ).unwrap();
         return ShapeRenderer { quad_vertices, quad_indices, shape_shader };
     }
-    fn draw_with_params (&self, frame: &mut glium::Frame, _transform: Mat4, mode: &str, outline: f32, color: Color) {
+    fn draw_with_params (&self, frame: &mut glium::Frame, transform: Mat4, mode: &str, outline: f32, color: Color) {
         let uniforms = uniform! [
-//            transform: transform,
+            transform: array4x4(transform),
             shading_mode: (mode, glium::program::ShaderStage::Fragment),
             outline: outline,
             color: color
