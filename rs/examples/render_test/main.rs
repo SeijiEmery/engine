@@ -21,9 +21,27 @@ impl GameDelegate for RenderTest {
         entities.add_resource(main_camera);
         entities.create_entity()
             .with(MaterialComponent::new(0.8, 0.2, 0.2, 0.0))
-            .with(TransformComponent::new().with_pos(0.4, 0.8).with_scale(0.2).with_angle(0.523))
+            .with(TransformComponent::new().with_pos(0.4, 0.6).with_scale(0.2).with_angle(0.523))
             .with(ShapeComponent::Box(BoxShape{ w: 1.0, h: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: None })
+            .build();
+        entities.create_entity()
+            .with(MaterialComponent::new(0.3, 0.5, 0.2, 0.0))
+            .with(TransformComponent::new().with_pos(-0.4, 0.6).with_scale(0.2).with_angle(-0.523))
+            .with(ShapeComponent::Box(BoxShape{ w: 1.0, h: 1.0 }))
+            .with(ShapeRendererComponent { visible: true, outline: Some(0.05) })
+            .build();
+        entities.create_entity()
+            .with(MaterialComponent::new(0.8, 0.8, 0.2, 0.0))
+            .with(TransformComponent::new().with_pos(0.4, -0.6).with_scale(0.2).with_angle(0.523))
+            .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
+            .with(ShapeRendererComponent { visible: true, outline: None })
+            .build();
+        entities.create_entity()
+            .with(MaterialComponent::new(0.1, 0.6, 0.8, 0.0))
+            .with(TransformComponent::new().with_pos(-0.4, -0.6).with_scale(0.2).with_angle(-0.523))
+            .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
+            .with(ShapeRendererComponent { visible: true, outline: Some(0.05) })
             .build();
     }
     fn register_systems (&mut self, systems: &mut specs::DispatcherBuilder, renderer: &mut RendererBackend) {
