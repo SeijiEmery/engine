@@ -1,6 +1,7 @@
 use glium;
 use glium::uniforms::AsUniformValue;
 
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct Color { r: f32, g: f32, b: f32, a: f32 }
 impl AsUniformValue for Color {
     fn as_uniform_value (&self) -> glium::uniforms::UniformValue {

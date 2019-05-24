@@ -2,7 +2,6 @@ pub mod renderer;
 pub use renderer::*;
 mod glium_renderer;
 use glium_renderer::{GliumRenderer};
-use core::borrow::BorrowMut;
 
 //pub fn make_glium_renderer<R> (display: glium::Display) -> R where R: Renderer {
 //pub fn make_glium_renderer (display: glium::Display) -> Renderer {
