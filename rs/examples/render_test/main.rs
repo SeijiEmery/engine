@@ -21,7 +21,7 @@ impl GameDelegate for RenderTest {
         entities.add_resource(main_camera);
         entities.create_entity()
             .with(MaterialComponent::new(0.8, 0.2, 0.2, 0.0))
-            .with(TransformComponent::new().with_pos(0.0, 0.0).with_scale(0.2).with_angle(0.523))
+            .with(TransformComponent::new().with_pos(0.4, 0.8).with_scale(0.2).with_angle(0.523))
             .with(ShapeComponent::Box(BoxShape{ w: 1.0, h: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: None })
             .build();
