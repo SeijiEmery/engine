@@ -3,7 +3,10 @@ pub use cgmath::Matrix4;
 pub use std::rc::Rc;
 pub use std::cell::RefCell;
 
+#[derive(Debug)]
 pub struct SpriteRef;
+
+#[derive(Debug)]
 pub enum RenderPrimitive {
     SolidBox(Color),
     SolidCircle(Color),
@@ -12,6 +15,8 @@ pub enum RenderPrimitive {
     Sprite(SpriteRef),
     Text(String)
 }
+
+#[derive(Debug)]
 pub struct RenderItem {
     pub primitive: RenderPrimitive,
     pub transform: Mat4,

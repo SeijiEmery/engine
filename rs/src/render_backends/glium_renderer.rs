@@ -19,6 +19,7 @@ impl GliumRenderer {
 }
 impl Renderer for GliumRenderer {
     fn draw (&mut self, item: RenderItem) {
+        println!("Rendering {:?}", item);
         match item.primitive {
             //            RenderPrimitive::SolidBox(Color) => println!("unimplemented: render solid box!"),
             //            RenderPrimitive::SolidCircle(Color) => println!("unimplemented: render solid circle!"),

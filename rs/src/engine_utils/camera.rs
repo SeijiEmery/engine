@@ -6,7 +6,7 @@ pub struct Camera {
     pub game_to_camera_units: Mat4,
 }
 impl Camera {
-    fn new () -> Camera {
+    pub fn new () -> Camera {
         return Camera {
             camera_view_transform: Matrix4::identity(),
             game_to_camera_units: Matrix4::identity()

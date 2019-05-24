@@ -2,12 +2,12 @@
 //use crate::render_backends::*;
 //use crate::engine_utils::*;
 use crate::render_backends::{RendererBackend, Renderer, RenderItem, RenderPrimitive};
-use crate::engine_utils::{ActiveCamera};
+use crate::engine_utils::{ActiveCamera, Camera};
 use crate::ecs_components::{TransformComponent, ShapeComponent, MaterialComponent, ShapeRendererComponent};
 use specs::{System, SystemData, Read, ReadStorage};
 use specs::*;
 
-struct ShapeRendererSystem {
+pub struct ShapeRendererSystem {
     renderer: RendererBackend
 }
 impl ShapeRendererSystem {
@@ -18,15 +18,18 @@ impl ShapeRendererSystem {
 }
 impl<'a> System<'a> for ShapeRendererSystem {
     type SystemData = (
-        Read<'a, ActiveCamera>,
+//        Read<'a, ActiveCamera>,
         ReadStorage<'a, TransformComponent>,
         ReadStorage<'a, ShapeComponent>,
         ReadStorage<'a, MaterialComponent>,
         ReadStorage<'a, ShapeRendererComponent>,
     );
-    fn run (&mut self, (camera, transform, shape, material, render_info): Self::SystemData) {
+    fn run (&mut self, (transform, shape, material, render_info): Self::SystemData) {
+//    fn run (&mut self, (camera, transform, shape, material, render_info): Self::SystemData) {
         let renderer : &mut Renderer = &mut *self.renderer.borrow_mut();
-        let camera = &*camera;
+//        let camera = &*camera;
+        let _camera = Camera::new();
+        let camera = &_camera;
         for (transform, shape, material, render_info) in (&transform, &shape, &material, &render_info).join() {
             if render_info.visible {
                 match shape {
