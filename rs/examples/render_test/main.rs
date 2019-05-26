@@ -171,7 +171,7 @@ impl GameDelegate for RenderTest {
 
         entities.create_entity()
             .with(MaterialComponent::new(0.8, 0.6, 0.4, 0.0))
-            .with(DepthOscillator { from: 1.0, to: -1.0, period: 0.5 })
+            .with(DepthOscillator { from: 0.99, to: 0.0, period: 1.0 })
             .with(ColorOscillator { from: vec4(1.0, 0.5, 0.5, 0.9), to: vec4(0.0, 0.5, 0.0, 0.1), period: 0.5 })
             .with(TransformComponent::new().with_pos(0.0, 0.0).with_scale(1.0))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
@@ -179,6 +179,7 @@ impl GameDelegate for RenderTest {
             .build();
         entities.create_entity()
             .with(MaterialComponent::new(0.1, 0.6, 0.8, 0.0))
+            .with(DepthOscillator { from: 1.0, to: 0.01, period: 1.0 })
             .with(TransformComponent::new().with_pos(0.0, 0.0).with_scale(1.0))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: Some(0.05) })

@@ -1,7 +1,7 @@
 use crate::renderer;
 pub use renderer::*;
 use crate::engine_utils::color::{Color};
-use glium::Surface;
+use glium::{Surface, DrawParameters};
 use cgmath::conv::{array4x4};
 //#[macro_use]
 use crate::glium;
@@ -32,7 +32,7 @@ impl Renderer for GliumRenderer {
     }
     fn begin_frame (&mut self) {
         let mut frame = self.display.draw();
-        frame.clear_color(0.0, 0.0, 0.0, 1.0);
+        frame.clear_all((0.0, 0.0, 0.0, 0.0),0.0, 0);
         self.frame = frame;
     }
     fn end_frame (&mut self) {
@@ -127,11 +127,20 @@ impl ShapeRenderer {
             outline_width: outline,
             color: color
         ];
+        use glium::draw_parameters::{DrawParameters, Depth, DepthTest, DepthClamp};
         frame.draw(
             &self.quad_vertices,
             self.quad_indices,
             &self.shape_shader, &uniforms,
-            &Default::default()).unwrap();
+            &DrawParameters {
+                depth: Depth {
+                    test: DepthTest::IfMore,
+                    write: true,
+                    range: (0.0, 1.),
+                    clamp: DepthClamp::Clamp
+                },
+                .. Default::default()
+            });
     }
     fn draw (&self, frame: &mut glium::Frame, transform: Mat4, primitive: RenderPrimitive) {
         match primitive {
