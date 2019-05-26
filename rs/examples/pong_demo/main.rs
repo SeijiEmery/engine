@@ -13,17 +13,22 @@ use engine_rs::ecs_components::transform_components::TransformComponent;
 #[derive(Default)]
 struct PlayerInput {
     left_pressed: bool,
-    right_pressed: bool
+    right_pressed: bool,
+    velocity: f64
 }
 impl PlayerInput {
     fn new () -> PlayerInput { Default::default() }
-    fn dir (&self) -> f32 {
+    fn dir (&self) -> f32 { self.velocity as f32 }
+    fn update (&mut self, time: &Time) {
         let mut dir = 0.0;
         if self.left_pressed { dir -= 1.0 }
         if self.right_pressed { dir += 1.0 }
-        dir
+        self.velocity -= self.velocity * 5.0 * time.dt;
+        self.velocity += dir * 10.0 * time.dt;
+        if self.velocity > 1.0 { self.velocity = 1.0 }
+        if self.velocity < -1.0 { self.velocity = -1.0 }
     }
-    fn update (&mut self, ev: &glutin::Event) {
+    fn on_event (&mut self, ev: &glutin::Event) {
         match ev {
             glutin::Event::WindowEvent {
                 event: glutin::WindowEvent::KeyboardInput {
@@ -105,9 +110,13 @@ impl GameDelegate for PongGame {
     }
     fn handle_event (&mut self, event: &glium::glutin::Event, state: &mut GameLoopState) {
         let input = &mut *state.ecs.write_resource::<PlayerInput>();
-        input.update(event);
+        input.on_event(event);
     }
-    fn on_begin_frame (&mut self, state: &mut GameLoopState) {}
+    fn on_begin_frame (&mut self, state: &mut GameLoopState) {
+        let input = &mut *state.ecs.write_resource::<PlayerInput>();
+        let time = &*state.ecs.read_resource::<Time>();
+        input.update(time);
+    }
     fn on_end_frame (&mut self, _state: &mut GameLoopState) {}
     fn teardown (&mut self, _state: &mut GameLoopState) {
         println!("terminating...");
