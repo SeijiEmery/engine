@@ -2,14 +2,10 @@ use std::{time, thread};
 use glium::Frame;
 use spin_sleep;
 
-const SLEEP_THRESHOLD : time::Duration = time::Duration::from_millis(3);
-const SLEEP_OVERHEAD : time::Duration = time::Duration::from_millis(3);
-
-//const TARGET_FRAMERATE_FOR_60HZ : f64 = 80.0;
-const TARGET_FRAMERATE_FOR_60HZ : f64 = 60.0;
-const TARGET_FRAME_DURATION_FOR_60HZ : time::Duration = time::Duration::from_nanos(
-    (1.0e9 / TARGET_FRAMERATE_FOR_60HZ) as u64);
-const TARGET_FRAME_DURATION : time::Duration = TARGET_FRAME_DURATION_FOR_60HZ;
+const TARGET_FRAMERATE : f64 = 60.0;
+const FRAMERATE_DYNAMIC_TARGET_SWITCHING_RATE : f64 = 0.9;
+const FRAMERATE_OVERSHOOT_FACTOR : f64 = 1.03;
+//const TARGET_FRAMERATE : f64 = 100.0;
 
 #[derive(Default, Debug)]
 pub struct Time {   // all values in seconds
@@ -29,10 +25,43 @@ fn multiply_f64 (duration: time::Duration, value: f64) -> time::Duration {
     );
 }
 #[derive(Debug, Clone)]
-pub enum FrameRateLimiter {
-    None,
-    SpinSleep(time::Duration),
-    SleepAt(time::Duration),
+pub struct FrameRateLimiter {
+    target_frame_interval: time::Duration,
+    dynamic_target: time::Duration,
+}
+impl FrameRateLimiter {
+    pub fn new (target_fps: f64) -> FrameRateLimiter {
+        let mut limiter = FrameRateLimiter {
+            target_frame_interval: time::Duration::from_secs(0),
+            dynamic_target: time::Duration::from_secs(0),
+        };
+        limiter.set_target_fps(target_fps);
+        limiter
+    }
+    pub fn target_fps (&self) -> f64 {
+        1.0 / to_f64(self.target_frame_interval)
+    }
+    pub fn set_target_fps (&mut self, target_fps: f64) {
+        self.target_frame_interval = time::Duration::from_nanos((1.0e9 / target_fps) as u64);
+        self.dynamic_target = self.target_frame_interval;
+    }
+    pub fn update (&mut self, last_frame_interval: time::Duration) {
+        let target_hard_adjust = to_f64(self.target_frame_interval)
+            / to_f64(last_frame_interval) / FRAMERATE_OVERSHOOT_FACTOR;
+        let target_soft_adjust = 1.0 - (1.0 - target_hard_adjust) * FRAMERATE_DYNAMIC_TARGET_SWITCHING_RATE;
+        let new_target = multiply_f64(self.dynamic_target, target_soft_adjust);
+        println!("adjusting dynamic target from {:?} -> {:?} ({:?} / {:?} = {:?} hard => {:?} soft",
+                 self.dynamic_target, new_target,
+                self.target_frame_interval, last_frame_interval,
+                target_hard_adjust, target_soft_adjust);
+        self.dynamic_target = new_target;
+    }
+    pub fn maybe_sleep_to_hit_framerate_target (&mut self, time_elapsed: time::Duration) {
+        if self.target_frame_interval > time_elapsed && self.dynamic_target > time_elapsed {
+            let dur = self.dynamic_target - time_elapsed;
+            spin_sleep::sleep(dur);
+        }
+    }
 }
 pub struct GameTime {
     instant_game_started:       time::Instant,
@@ -60,7 +89,7 @@ impl GameTime {
             avg_delta_time: None,
             avg_carry_factor: 0.9,
             simulation_speed: 1.0,
-            framerate_limiter: FrameRateLimiter::SpinSleep(TARGET_FRAME_DURATION),
+            framerate_limiter: FrameRateLimiter::new(TARGET_FRAMERATE),
         }
     }
     pub fn begin_frame (&mut self) {
@@ -83,32 +112,14 @@ impl GameTime {
     }
     pub fn end_frame (&mut self) {
         let now = time::Instant::now();
+        let last_frame_interval = self.instant_last_frame_ended.map(|t0| now - t0);
+        let current_time_elapsed = self.instant_this_frame_started.map(|t0| now - t0).unwrap();
         self.instant_last_frame_ended = Some(now);
-        let time_elapsed = now - self.instant_this_frame_started.unwrap();
-        match self.framerate_limiter {
-            FrameRateLimiter::None => (),
-            FrameRateLimiter::SpinSleep(target_frame_time) => {
-                if (target_frame_time > time_elapsed) {
-                    let dur = target_frame_time - time_elapsed;
-                    println!("sleeping for {:?} ({:?} - {:?})", dur, target_frame_time, time_elapsed);
-                    let t0 = time::Instant::now();
-                    spin_sleep::sleep(dur);
-                    let t1 = time::Instant::now();
-                    println!("actually slept for {:?}", t1 - t0);
-                }
-            },
-            FrameRateLimiter::SleepAt(target_frame_time) => {
-                if (target_frame_time > time_elapsed + SLEEP_THRESHOLD) {
-                    let dur : time::Duration = target_frame_time - time_elapsed - SLEEP_OVERHEAD;
-                    println!("sleeping for {:?} ({:?} - {:?} - {:?})",
-                             dur, target_frame_time, time_elapsed, SLEEP_OVERHEAD);
-                    let t0 = time::Instant::now();
-                    thread::sleep(dur);
-                    let t1 = time::Instant::now();
-                    println!("actually slept for {:?}", t1 - t0);
-                }
-            }
+
+        if last_frame_interval.is_some() {
+            self.framerate_limiter.update(last_frame_interval.unwrap());
         }
+        self.framerate_limiter.maybe_sleep_to_hit_framerate_target(current_time_elapsed);
     }
     pub fn delta_time (&self) -> time::Duration {
         return match self.current_delta_time {
