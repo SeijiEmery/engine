@@ -1,5 +1,4 @@
-use std::{time, thread};
-use glium::Frame;
+use std::{time};
 use spin_sleep;
 
 const TARGET_FRAMERATE : f64 = 60.0;

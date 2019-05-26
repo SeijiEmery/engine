@@ -1,6 +1,6 @@
 use specs;
 use glium;
-use crate::render_backends::*;
+use crate::render_backends::{Renderer, RendererBackend, make_glium_renderer};
 use crate::engine_core::time::{GameTime, Time};
 
 pub trait GameDelegate {

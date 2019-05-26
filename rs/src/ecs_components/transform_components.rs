@@ -45,7 +45,7 @@ impl TransformComponent {
 //            0.0, 0.0, 0.0, 1.0
 //        );
     }
-    pub fn local_to_camera_space_matrix (&self, camera: &Camera) -> Mat4 {
+    pub fn local_to_camera_space_matrix (&self, _camera: &Camera) -> Mat4 {
         return self.local_to_world_space_matrix();
     }
 }

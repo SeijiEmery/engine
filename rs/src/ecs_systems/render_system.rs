@@ -33,7 +33,7 @@ impl<'a> System<'a> for ShapeRendererSystem {
         for (transform, shape, material, render_info) in (&transform, &shape, &material, &render_info).join() {
             if render_info.visible {
                 match shape {
-                    ShapeComponent::Box(shape) => {
+                    ShapeComponent::Box(_shape) => {
                         match render_info.outline {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineBox(outline, material.color),
@@ -45,7 +45,7 @@ impl<'a> System<'a> for ShapeRendererSystem {
                             })
                         }
                     },
-                    ShapeComponent::Circle(shape) => {
+                    ShapeComponent::Circle(_shape) => {
                         match render_info.outline {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineCircle(outline, material.color),

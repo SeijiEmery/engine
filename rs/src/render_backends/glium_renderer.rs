@@ -3,7 +3,7 @@ pub use renderer::*;
 use crate::engine_utils::color::{Color};
 use glium::Surface;
 use cgmath::conv::{array4x4};
-#[macro_use]
+//#[macro_use]
 use crate::glium;
 
 pub struct GliumRenderer {
@@ -13,7 +13,7 @@ pub struct GliumRenderer {
 }
 impl GliumRenderer {
     pub fn new (display: glium::Display) -> GliumRenderer {
-        let mut frame = display.draw(); frame.set_finish();
+        let mut frame = display.draw(); frame.set_finish().unwrap();
         let shape_renderer = ShapeRenderer::new(&display);
         return GliumRenderer { display, shape_renderer, frame }
     }
@@ -127,7 +127,11 @@ impl ShapeRenderer {
             outline_width: outline,
             color: color
         ];
-        frame.draw(&self.quad_vertices, self.quad_indices, &self.shape_shader, &uniforms, &Default::default());
+        frame.draw(
+            &self.quad_vertices,
+            self.quad_indices,
+            &self.shape_shader, &uniforms,
+            &Default::default()).unwrap();
     }
     fn draw (&self, frame: &mut glium::Frame, transform: Mat4, primitive: RenderPrimitive) {
         match primitive {
