@@ -2,7 +2,6 @@ use specs;
 use glium;
 use crate::render_backends::{Renderer, RendererBackend, make_glium_renderer};
 use crate::engine_core::time::{GameTime, Time};
-use core::borrow::BorrowMut;
 
 pub trait GameDelegate {
     fn register_components (&mut self, world: &mut specs::World);
@@ -42,7 +41,6 @@ pub struct GameLoop<'a, 'b> {
 }
 impl<'a, 'b> GameLoop <'a, 'b> {
     fn new (game_delegate: &mut GameDelegate) -> GameLoop<'a, 'b> {
-        use glium::glutin;
         let time = GameTime::new();
         let events_loop = glutin::EventsLoop::new();
         let wb = glutin::WindowBuilder::new();

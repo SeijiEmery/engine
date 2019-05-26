@@ -22,6 +22,7 @@ pub struct RenderItem {
     pub primitive: RenderPrimitive,
     pub transform: Mat4,
     pub depth: f32,
+    pub transparent: bool
 }
 
 pub trait Renderer {

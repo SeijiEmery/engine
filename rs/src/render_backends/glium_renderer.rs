@@ -1,7 +1,7 @@
 use crate::renderer;
 pub use renderer::*;
 use crate::engine_utils::color::{Color};
-use glium::{Surface, DrawParameters};
+use glium::{Surface};
 use cgmath::conv::{array4x4};
 //#[macro_use]
 use crate::glium;
@@ -22,20 +22,34 @@ impl GliumRenderer {
 }
 impl GliumRenderer {
     fn draw_items (&mut self) {
+        // sort by depth
         use std::cmp::Ord;
-        self.render_list.sort_by(|a, b|
-            a.depth.partial_cmp(&b.depth).unwrap());
+
+
+        self.render_list.sort_by(|a, b| a.depth.partial_cmp(&b.depth).unwrap());
+
+        // draw opaque items first, then transparent
+
+        // fuck it
         for item in &self.render_list {
-            match item.primitive {
-                //            RenderPrimitive::SolidBox(Color) => println!("unimplemented: render solid box!"),
-                //            RenderPrimitive::SolidCircle(Color) => println!("unimplemented: render solid circle!"),
-                //            RenderPrimitive::OutlineBox(f32, Color) => println!("unimplemented: render outlined box!"),
-                //            RenderPrimitive::OutlineCircle(f32, Color) => println!("unimplemented: render outlined circle!"),
-                RenderPrimitive::Sprite(_) => println!("unimplemented: render sprite!"),
-                RenderPrimitive::Text(_) => println!("unimplemented: render text!"),
-                _ => self.shape_renderer.draw(&mut self.frame, &item.transform, &item.primitive),
+            if !item.transparent {
+                self.shape_renderer.draw(&mut self.frame, &item);
             }
         }
+        for item in &self.render_list {
+            if item.transparent {
+                self.shape_renderer.draw(&mut self.frame, &item);
+            }
+        }
+
+//        let (transparent, opaque) : (&Vec<RenderItem>, &Vec<RenderItem>)
+//            = self.render_list.into_iter().partition(|item| item.transparent);
+//        for item in opaque {
+//            self.shape_renderer.draw(&mut self.frame, &item);
+//        }
+//        for item in transparent {
+//            self.shape_renderer.draw(&mut self.frame, &item);
+//        }
     }
 }
 impl Renderer for GliumRenderer {
@@ -136,36 +150,39 @@ impl ShapeRenderer {
         let render_items = Vec::<RenderItem>::new();
         return ShapeRenderer { quad_vertices, quad_indices, shape_shader, render_items };
     }
-    fn draw_with_params (&self, frame: &mut glium::Frame, transform: &Mat4, mode: &str, outline: f32, color: &Color) {
+    fn draw_with_params (&self, frame: &mut glium::Frame, transform: &Mat4, draw_function: &str, outline: f32, color: Color, transparent: bool) {
         let uniforms = uniform! [
             transform: array4x4(*transform),
-            shading_mode: (mode, glium::program::ShaderStage::Fragment),
+            shading_mode: (draw_function, glium::program::ShaderStage::Fragment),
             outline_width: outline,
-            color: *color
+            color: color
         ];
         use glium::draw_parameters::{DrawParameters, Depth, DepthTest, DepthClamp, Blend};
+        let DP_OPAQUE : DrawParameters = DrawParameters {
+            depth: Depth { test: DepthTest::IfMoreOrEqual, write: true, .. Default::default() },
+            .. Default::default()
+        };
+        let DP_TRANSPARENT : DrawParameters = DrawParameters {
+            depth: Depth { test: DepthTest::IfMoreOrEqual, write: false, .. Default::default() },
+            blend: Blend::alpha_blending(),
+            .. Default::default()
+        };
+        let dp = &DP_OPAQUE;
+//        let dp = if transparent { &DP_TRANSPARENT } else { &DP_OPAQUE };
         frame.draw(
             &self.quad_vertices,
             self.quad_indices,
             &self.shape_shader, &uniforms,
-            &DrawParameters {
-                depth: Depth {
-                    test: DepthTest::IfMore,
-                    write: true,
-                    range: (0.0, 1.),
-                    clamp: DepthClamp::Clamp
-                },
-//                blend: Blend::alpha_blending(),
-                .. Default::default()
-            });
+            &dp).unwrap();
     }
-    fn draw (&self, frame: &mut glium::Frame, transform: &Mat4, primitive: &RenderPrimitive) {
-        match primitive {
-            RenderPrimitive::SolidBox(color) => self.draw_with_params(frame, transform, "draw_solid_box", 0.0, color),
-            RenderPrimitive::SolidCircle(color) => self.draw_with_params(frame, transform, "draw_solid_circle", 0.0, color),
-            RenderPrimitive::OutlineBox(width, color) => self.draw_with_params(frame, transform, "draw_outline_box", *width, color),
-            RenderPrimitive::OutlineCircle(width, color) => self.draw_with_params(frame, transform, "draw_outline_circle", *width, color),
-            _ => ()
+    fn draw (&self, frame: &mut glium::Frame, item: &RenderItem) {
+        match item.primitive {
+            RenderPrimitive::SolidBox(color) => self.draw_with_params(frame, &item.transform, "draw_solid_box", 0.0, color, item.transparent),
+            RenderPrimitive::SolidCircle(color) => self.draw_with_params(frame, &item.transform, "draw_solid_circle", 0.0, color, item.transparent),
+            RenderPrimitive::OutlineBox(width, color) => self.draw_with_params(frame, &item.transform, "draw_outline_box", width, color, item.transparent),
+            RenderPrimitive::OutlineCircle(width, color) => self.draw_with_params(frame, &item.transform, "draw_outline_circle", width, color, item.transparent),
+            RenderPrimitive::Sprite(_) => println!("unimplemented: render sprite!"),
+            RenderPrimitive::Text(_) => println!("unimplemented: render text!"),
         }
     }
 }

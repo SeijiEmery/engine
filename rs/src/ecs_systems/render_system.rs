@@ -38,12 +38,14 @@ impl<'a> System<'a> for ShapeRendererSystem {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineBox(outline, material.color),
                                 transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth()
+                                depth: transform.depth(),
+                                transparent: material.color.a < 1.0
                             }),
                             None => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::SolidBox(material.color),
                                 transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth()
+                                depth: transform.depth(),
+                                transparent: material.color.a < 1.0
                             })
                         }
                     },
@@ -52,12 +54,14 @@ impl<'a> System<'a> for ShapeRendererSystem {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineCircle(outline, material.color),
                                 transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth()
+                                depth: transform.depth(),
+                                transparent: material.color.a < 1.0
                             }),
                             None => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::SolidCircle(material.color),
                                 transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth()
+                                depth: transform.depth(),
+                                transparent: material.color.a < 1.0
                             })
                         }
                     }
