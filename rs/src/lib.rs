@@ -4,6 +4,7 @@ extern crate specs;
 #[macro_use]
 extern crate glium;
 extern crate cgmath;
+extern crate spin_sleep;
 pub mod engine_utils;
 pub use engine_utils::*;
 pub mod render_backends;

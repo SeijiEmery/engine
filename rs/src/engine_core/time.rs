@@ -1,9 +1,15 @@
 use std::{time, thread};
 use glium::Frame;
+use spin_sleep;
 
 const SLEEP_THRESHOLD : time::Duration = time::Duration::from_millis(3);
 const SLEEP_OVERHEAD : time::Duration = time::Duration::from_millis(3);
-const SPINLOCK_THRESHOLD : time::Duration = time::Duration::from_millis(1);
+
+//const TARGET_FRAMERATE_FOR_60HZ : f64 = 80.0;
+const TARGET_FRAMERATE_FOR_60HZ : f64 = 60.0;
+const TARGET_FRAME_DURATION_FOR_60HZ : time::Duration = time::Duration::from_nanos(
+    (1.0e9 / TARGET_FRAMERATE_FOR_60HZ) as u64);
+const TARGET_FRAME_DURATION : time::Duration = TARGET_FRAME_DURATION_FOR_60HZ;
 
 #[derive(Default, Debug)]
 pub struct Time {   // all values in seconds
@@ -25,7 +31,7 @@ fn multiply_f64 (duration: time::Duration, value: f64) -> time::Duration {
 #[derive(Debug, Clone)]
 pub enum FrameRateLimiter {
     None,
-    SpinLockAt(time::Duration),
+    SpinSleep(time::Duration),
     SleepAt(time::Duration),
 }
 pub struct GameTime {
@@ -54,7 +60,7 @@ impl GameTime {
             avg_delta_time: None,
             avg_carry_factor: 0.9,
             simulation_speed: 1.0,
-            framerate_limiter: FrameRateLimiter::SleepAt(time::Duration::from_nanos((1e9 / 60.0) as u64)),
+            framerate_limiter: FrameRateLimiter::SpinSleep(TARGET_FRAME_DURATION),
         }
     }
     pub fn begin_frame (&mut self) {
@@ -81,9 +87,14 @@ impl GameTime {
         let time_elapsed = now - self.instant_this_frame_started.unwrap();
         match self.framerate_limiter {
             FrameRateLimiter::None => (),
-            FrameRateLimiter::SpinLockAt(target_frame_time) => {
-                if (target_frame_time > time_elapsed + SPINLOCK_THRESHOLD) {
-                    
+            FrameRateLimiter::SpinSleep(target_frame_time) => {
+                if (target_frame_time > time_elapsed) {
+                    let dur = target_frame_time - time_elapsed;
+                    println!("sleeping for {:?} ({:?} - {:?})", dur, target_frame_time, time_elapsed);
+                    let t0 = time::Instant::now();
+                    spin_sleep::sleep(dur);
+                    let t1 = time::Instant::now();
+                    println!("actually slept for {:?}", t1 - t0);
                 }
             },
             FrameRateLimiter::SleepAt(target_frame_time) => {
