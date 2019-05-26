@@ -142,20 +142,26 @@ impl GameDelegate for RenderTest {
                 max_scale: vec2(1.0, 1.0),
                 speed: vec2(1.0, 1.0) })
             .with(MaterialComponent::new(0.8, 0.2, 0.2, 1.0))
-            .with(TransformComponent::new().with_pos(0.4, 0.6).with_scale(0.2).with_angle(0.523))
+            .with(TransformComponent::new().with_depth(0.1).with_pos(0.4, 0.6).with_scale(0.2).with_angle(0.523))
             .with(ShapeComponent::Box(BoxShape{ w: 1.0, h: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: None })
             .build();
         entities.create_entity()
             .with(RotateMotion { speed: 1.0 })
             .with(MaterialComponent::new(0.3, 0.5, 0.2, 1.0))
-            .with(TransformComponent::new().with_pos(-0.4, 0.6).with_scale(0.2).with_angle(-0.523))
+            .with(TransformComponent::new().with_depth(0.1).with_pos(-0.4, 0.6).with_scale(0.2).with_angle(-0.523))
             .with(ShapeComponent::Box(BoxShape{ w: 1.0, h: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: Some(0.05) })
             .build();
         entities.create_entity()
+//            .with(ScaleOscillator {
+//                min_scale: vec2(0.2, 0.1),
+//                max_scale: vec2(0.5, 0.05),
+//                speed: vec2(5.0, 10.0)
+//            })
+            .with(RotateMotion { speed: 10.0 })
             .with(MaterialComponent::new(0.8, 0.8, 0.2, 1.0))
-            .with(TransformComponent::new().with_pos(0.4, -0.6).with_scale(0.2).with_angle(0.523))
+            .with(TransformComponent::new().with_depth(0.1).with_pos(0.4, -0.6).with_scale(0.2).with_angle(0.523))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: None })
             .build();
@@ -164,23 +170,21 @@ impl GameDelegate for RenderTest {
                 from: vec2(-0.6, -0.7), to: vec2(0.4, 0.5), period: 0.5
             })
             .with(MaterialComponent::new(0.1, 0.6, 0.8, 1.0))
-            .with(TransformComponent::new().with_pos(-0.4, -0.6).with_scale(0.2).with_angle(-0.523))
+            .with(TransformComponent::new().with_depth(0.9).with_pos(-0.4, -0.6).with_scale(0.2).with_angle(-0.523))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: Some(0.05) })
             .build();
 
         entities.create_entity()
             .with(MaterialComponent::new(0.8, 0.6, 0.4, 1.0))
-            .with(DepthOscillator { from: 0.99, to: 0.0, period: 1.0 })
             .with(ColorOscillator { from: vec4(1.0, 0.5, 0.5, 0.9), to: vec4(0.0, 0.5, 0.0, 0.1), period: 0.5 })
-            .with(TransformComponent::new().with_pos(0.0, 0.0).with_scale(1.0))
+            .with(TransformComponent::new().with_depth(0.30).with_pos(0.0, 0.0).with_scale(1.0))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: None })
             .build();
         entities.create_entity()
             .with(MaterialComponent::new(0.1, 0.6, 0.8, 1.0))
-            .with(DepthOscillator { from: 1.0, to: 0.01, period: 1.0 })
-            .with(TransformComponent::new().with_pos(0.0, 0.0).with_scale(1.0))
+            .with(TransformComponent::new().with_depth(0.31).with_pos(0.0, 0.0).with_scale(1.0))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
             .with(ShapeRendererComponent { visible: true, outline: Some(0.05) })
             .build();

@@ -111,20 +111,20 @@ impl ShapeRenderer {
             uniform vec4    color;
             uniform float   outline_width;
 
-            subroutine void shape_shader();
-            subroutine uniform shape_shader shading_mode;
+            subroutine void draw_function();
+            subroutine uniform draw_function draw_primitive;
 
-            subroutine(shape_shader) void draw_solid_box () {
+            subroutine(draw_function) void draw_solid_box () {
                 out_color = vec4(color.rgb * color.a, color.a);
             }
-            subroutine(shape_shader) void draw_solid_circle () {
+            subroutine(draw_function) void draw_solid_circle () {
                 if (dot(local_coords, local_coords) < 1.0) {
                     out_color = vec4(color.rgb * color.a, color.a);
                 } else {
                     discard;
                 }
             }
-            subroutine(shape_shader) void draw_outline_box () {
+            subroutine(draw_function) void draw_outline_box () {
                 vec2 from_center = abs(local_coords);
                 if (max(from_center.x, from_center.y) >= 1.0 - outline_width) {
                     out_color = vec4(color.rgb * color.a, color.a);
@@ -132,7 +132,7 @@ impl ShapeRenderer {
                     discard;
                 }
             }
-            subroutine(shape_shader) void draw_outline_circle () {
+            subroutine(draw_function) void draw_outline_circle () {
                 float from_center = dot(local_coords, local_coords);
                 if (from_center <= 1.0 && from_center >= 1.0 - outline_width) {
                     out_color = vec4(color.rgb * color.a, color.a);
@@ -141,7 +141,7 @@ impl ShapeRenderer {
                 }
             }
             void main () {
-                shading_mode();
+                draw_primitive();
             }
         "#;
         let shape_shader = glium::Program::from_source(
@@ -153,7 +153,7 @@ impl ShapeRenderer {
     fn draw_with_params (&self, frame: &mut glium::Frame, transform: &Mat4, draw_function: &str, outline: f32, color: Color, transparent: bool) {
         let uniforms = uniform! [
             transform: array4x4(*transform),
-            shading_mode: (draw_function, glium::program::ShaderStage::Fragment),
+            draw_primitive: (draw_function, glium::program::ShaderStage::Fragment),
             outline_width: outline,
             color: color
         ];

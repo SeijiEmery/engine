@@ -21,8 +21,11 @@ impl TransformComponent {
         }
     }
     pub fn depth (&self) -> f32 { self.pos.z }
+    pub fn with_depth (&self, z: f32) -> TransformComponent {
+        return TransformComponent { pos: Vector3 { x: self.pos.x, y: self.pos.y, z }, scale: self.scale, rot: self.rot }
+    }
     pub fn with_pos (&self, x: f32, y: f32) -> TransformComponent {
-        return TransformComponent { pos: Vector3 { x, y, z: 0.0 }, scale: self.scale, rot: self.rot };
+        return TransformComponent { pos: Vector3 { x, y, z: self.pos.z }, scale: self.scale, rot: self.rot };
     }
     pub fn with_scale (&self, s: f32) -> TransformComponent {
         return TransformComponent { pos: self.pos, scale: Vector2 { x: s, y: s }, rot: self.rot };
