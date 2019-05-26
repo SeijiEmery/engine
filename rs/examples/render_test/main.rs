@@ -68,7 +68,6 @@ impl<'a> System<'a> for MoveOscillatorSystem {
             let target = oscillator.from * interp + oscillator.to * (1.0 - interp);
             transform.pos.x = target.x;
             transform.pos.y = target.y;
-            transform.pos.z = -1.0 + interp * 2.0;
         }
     }
 }
@@ -161,12 +160,12 @@ impl GameDelegate for RenderTest {
             .build();
         entities.create_entity()
             .with(MoveOscillator {
-                from: vec2(-0.6, -0.7), to: vec2(0.4, 0.5), period: 0.5
+                from: vec2(-0.6, -0.7), to: vec2(0.4, 0.5), period: 1.0
             })
-            .with(MaterialComponent::new(1.0, 0.0, 0.0, 0.99))
-            .with(TransformComponent::new().with_depth(1.0).with_pos(-0.4, -0.6).with_scale(0.2).with_angle(-0.523))
+            .with(MaterialComponent::new(1.0, 0.0, 0.0, 1.0))
+            .with(TransformComponent::new().with_depth(0.9).with_pos(-0.4, -0.6).with_scale(0.2).with_angle(-0.523))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))
-            .with(ShapeRendererComponent { visible: true, outline: Some(0.05) })
+            .with(ShapeRendererComponent { visible: true, outline: Some(0.2) })
             .build();
 
         entities.create_entity()
