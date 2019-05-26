@@ -11,7 +11,48 @@ use engine_rs::ecs_components::render_components::{MaterialComponent, ShapeCompo
 use engine_rs::ecs_components::transform_components::TransformComponent;
 
 #[derive(Default)]
-struct PlayerInput(f32);
+struct PlayerInput {
+    left_pressed: bool,
+    right_pressed: bool
+}
+impl PlayerInput {
+    fn new () -> PlayerInput { Default::default() }
+    fn dir (&self) -> f32 {
+        let mut dir = 0.0;
+        if self.left_pressed { dir -= 1.0 }
+        if self.right_pressed { dir += 1.0 }
+        dir
+    }
+    fn update (&mut self, ev: &glutin::Event) {
+        match ev {
+            glutin::Event::WindowEvent {
+                event: glutin::WindowEvent::KeyboardInput {
+                    input: glutin::KeyboardInput {
+                        virtual_keycode: Some(key),
+                        state, ..
+                    }, ..
+                }, ..
+            } => {
+                match key {
+                    glutin::VirtualKeyCode::Left | glutin::VirtualKeyCode::A => {
+                        self.left_pressed = match state {
+                            glutin::ElementState::Pressed => true,
+                            glutin::ElementState::Released => false
+                        }
+                    }
+                    glutin::VirtualKeyCode::Right | glutin::VirtualKeyCode::D => {
+                        self.right_pressed = match state {
+                            glutin::ElementState::Pressed => true,
+                            glutin::ElementState::Released => false
+                        }
+                    }, _ => ()
+                }
+            },
+            _ => ()
+        }
+    }
+}
+
 struct PlayerComponent { min_x: f32, max_x: f32, speed: f32 }
 impl Component for PlayerComponent { type Storage = VecStorage<PlayerComponent>; }
 struct PlayerInputSystem {}
@@ -26,7 +67,7 @@ impl<'a> System<'a> for PlayerInputSystem {
         let time = &*time;
         let input = &*input;
         for (player, mut transform) in (&player, &mut transform).join() {
-            let mut x = transform.pos.x + player.speed * input.0 * (time.dt as f32);
+            let mut x = transform.pos.x + player.speed * input.dir() * (time.dt as f32);
             if x < player.min_x { x = player.min_x; }
             if x > player.max_x { x = player.max_x; }
             transform.pos.x = x;
@@ -35,7 +76,9 @@ impl<'a> System<'a> for PlayerInputSystem {
 }
 
 #[derive(Default)]
-struct PongGame {}
+struct PongGame {
+
+}
 impl GameDelegate for PongGame {
     fn register_components (&mut self, entities: &mut specs::World) {
         let main_camera : ActiveCamera = Camera::new();
@@ -45,12 +88,12 @@ impl GameDelegate for PongGame {
         entities.register::<ShapeRendererComponent>();
         entities.register::<PlayerComponent>();
         entities.add_resource(main_camera);
-        entities.add_resource(PlayerInput(0.0));
+        entities.add_resource(PlayerInput::new());
 
         // player paddle
         entities.create_entity()
-            .with(PlayerComponent { speed: 1.0, min_x: -0.7, max_x: 0.7 })
-            .with( TransformComponent { pos: vec3(0.0, -0.7, 1.0), scale: vec2(0.5, 0.2), rot: Rad(0.0) })
+            .with(PlayerComponent { speed: 2.0, min_x: -0.7, max_x: 0.7 })
+            .with( TransformComponent { pos: vec3(0.0, -0.85, 1.0), scale: vec2(0.3, 0.08), rot: Rad(0.0) })
             .with(ShapeComponent::Box(BoxShape{ w: 0.5, h: 0.2 }))
             .with(ShapeRendererComponent { visible: true, outline: None })
             .with(MaterialComponent { color: Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 } })
@@ -60,10 +103,13 @@ impl GameDelegate for PongGame {
         systems.add(PlayerInputSystem{}, "player input", &[]);
         systems.add_thread_local(ShapeRendererSystem::new(renderer));
     }
-    fn handle_event (&mut self, _event: &glium::glutin::Event, _game_state: &mut GameLoopState) {}
-    fn on_begin_frame (&mut self) {}
-    fn on_end_frame (&mut self) {}
-    fn teardown (&mut self) {
+    fn handle_event (&mut self, event: &glium::glutin::Event, state: &mut GameLoopState) {
+        let input = &mut *state.ecs.write_resource::<PlayerInput>();
+        input.update(event);
+    }
+    fn on_begin_frame (&mut self, state: &mut GameLoopState) {}
+    fn on_end_frame (&mut self, _state: &mut GameLoopState) {}
+    fn teardown (&mut self, _state: &mut GameLoopState) {
         println!("terminating...");
     }
 }

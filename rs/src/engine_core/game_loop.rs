@@ -6,10 +6,10 @@ use crate::engine_core::time::{GameTime, Time};
 pub trait GameDelegate {
     fn register_components (&mut self, world: &mut specs::World);
     fn register_systems (&mut self, dispatcher: &mut specs::DispatcherBuilder, renderer: &mut RendererBackend);
-    fn handle_event (&mut self, event: &glutin::Event, game_state: &mut GameLoopState);
-    fn on_begin_frame (&mut self);
-    fn on_end_frame (&mut self);
-    fn teardown (&mut self);
+    fn handle_event (&mut self, event: &glutin::Event, game: &mut GameLoopState);
+    fn on_begin_frame (&mut self, game: &mut GameLoopState);
+    fn on_end_frame (&mut self, game: &mut GameLoopState);
+    fn teardown (&mut self, game: &mut GameLoopState);
 }
 impl GameDelegate {
     pub fn run (&mut self) {
@@ -31,9 +31,9 @@ macro_rules! run_game {
 pub struct GameLoopState {
     pub running: bool,
     pub time: GameTime,
+    pub ecs: specs::World,
 }
 pub struct GameLoop<'a, 'b> {
-    ecs: specs::World,
     dispatcher: specs::Dispatcher<'a, 'b>,
     renderer: RendererBackend,
     events_loop: glium::glutin::EventsLoop,
@@ -55,13 +55,13 @@ impl<'a, 'b> GameLoop <'a, 'b> {
         game_delegate.register_systems(&mut dispatcher, &mut renderer);
         let dispatcher = dispatcher.build();
         return GameLoop {
-            ecs,
             renderer,
             dispatcher,
             events_loop,
             state: GameLoopState {
                 running: true,
-                time
+                time,
+                ecs
             }
         }
     }
@@ -71,24 +71,24 @@ impl<'a, 'b> GameLoop <'a, 'b> {
             // Calculate / update framerate, delta time, and simulation stuff
             let mut state = &mut self.state;
             state.time.begin_frame();
-            state.time.update(&mut *self.ecs.write_resource::<Time>());
+            state.time.update(&mut *state.ecs.write_resource::<Time>());
 
 //            let now = state.time.absolute_time_since_started();
 //            state.time.current_fps().map(|fps| println!("time = {:?}, dt = {:?}, avg dt = {:?}, framerate = {:?}",
 //                                                        now, state.time.delta_time(), state.time.avg_delta_time(), fps));
 
             // Run on_begin_frame() user code (after updating time info)
-            game_delegate.on_begin_frame();
+            game_delegate.on_begin_frame(&mut state);
 
             // Acquire frame context to begin rendering
             self.renderer.begin_frame();
 
             // Update all systems (the bulk of the work happens here)
-            self.dispatcher.dispatch(&mut self.ecs.res);
+            self.dispatcher.dispatch(&mut state.ecs.res);
 
             // Run event handlers
             self.events_loop.poll_events(|ev| {
-                game_delegate.handle_event(&ev, &mut state);
+                game_delegate.handle_event(&ev,&mut state);
                 match ev {
                     glutin::Event::WindowEvent { event, .. } => match event {
                         glutin::WindowEvent::CloseRequested => state.running = false,
@@ -99,11 +99,11 @@ impl<'a, 'b> GameLoop <'a, 'b> {
             });
 
             // End the frame update
-            game_delegate.on_end_frame();
+            game_delegate.on_end_frame(&mut state);
             state.time.end_frame();
             self.renderer.end_frame();
         }
         // Run teardown() event for user code before exiting
-        game_delegate.teardown();
+        game_delegate.teardown(&mut self.state);
     }
 }
