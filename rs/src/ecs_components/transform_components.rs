@@ -33,8 +33,8 @@ impl TransformComponent {
         let cos_theta = self.rot.0.cos();
         let sin_theta = self.rot.0.sin();
         return Mat4::new(
-            self.scale.x * cos_theta, -sin_theta, 0.0, 0.0,
-            sin_theta, self.scale.y * cos_theta, 0.0, 0.0,
+            self.scale.x * cos_theta, self.scale.y * -sin_theta, 0.0, 0.0,
+            self.scale.x * sin_theta, self.scale.y * cos_theta, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
             self.pos.x, self.pos.y, self.pos.z, 1.0
         );

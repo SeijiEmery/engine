@@ -31,7 +31,7 @@ impl<'a> System<'a> for RotatingSystem {
         let time  = &*time;
         for (rotate_motion, mut transform) in (&rotate_motion, &mut transform).join() {
             transform.rot = Rad(
-                ((rotate_motion.speed * time.total_simulation_time) % std::f64::consts::FRAC_2_PI) as f32);
+                (rotate_motion.speed * time.total_simulation_time) as f32);
         }
     }
 }
