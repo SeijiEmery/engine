@@ -2,6 +2,7 @@ use specs;
 use glium;
 use crate::render_backends::{Renderer, RendererBackend, make_glium_renderer};
 use crate::engine_core::time::{GameTime, Time};
+use core::borrow::BorrowMut;
 
 pub trait GameDelegate {
     fn register_components (&mut self, world: &mut specs::World);
@@ -50,6 +51,8 @@ impl<'a, 'b> GameLoop <'a, 'b> {
         let mut ecs = specs::World::new();
         let mut dispatcher = specs::DispatcherBuilder::new();
         let mut renderer = make_glium_renderer(display);
+
+        ecs.add_resource(Time::new());
         game_delegate.register_components(&mut ecs);
         game_delegate.register_systems(&mut dispatcher, &mut renderer);
         let dispatcher = dispatcher.build();
@@ -70,6 +73,8 @@ impl<'a, 'b> GameLoop <'a, 'b> {
             // Calculate / update framerate, delta time, and simulation stuff
             let mut state = &mut self.state;
             state.time.begin_frame();
+            state.time.update(&mut *self.ecs.write_resource::<Time>());
+
 //            let now = state.time.absolute_time_since_started();
 //            state.time.current_fps().map(|fps| println!("time = {:?}, dt = {:?}, avg dt = {:?}, framerate = {:?}",
 //                                                        now, state.time.delta_time(), state.time.avg_delta_time(), fps));

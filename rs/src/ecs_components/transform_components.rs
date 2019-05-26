@@ -8,9 +8,9 @@ use crate::engine_utils::{Vec3, Vec2, Rad, Vector2, Vector3, Mat4, Camera};
 #[derive(Component)]
 #[storage(VecStorage)]
 pub struct TransformComponent {
-    pos:    Vec3,
-    scale:  Vec2,
-    rot:    Rad<f32>,
+    pub pos:    Vec3,
+    pub scale:  Vec2,
+    pub rot:    Rad<f32>,
 }
 impl TransformComponent {
     pub fn new () -> TransformComponent {

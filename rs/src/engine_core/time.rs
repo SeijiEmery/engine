@@ -8,12 +8,14 @@ const FRAMERATE_OVERSHOOT_FACTOR : f64 = 1.03;
 
 #[derive(Default, Debug)]
 pub struct Time {   // all values in seconds
-    total_game_time:        f64,    // total time (accumulated), realtime
-    total_simulation_time:  f64,    // simulation time spent (varies according to simulation rate)
-    dt:                     f64,    // current delta time (realtime)
-    avg_dt:                 f64,    // current delta time (realtime, averaged)
-    sim_dt:                 f64,    // current delta time in the simulation
+    pub total_game_time:        f64,    // total time (accumulated), realtime
+    pub total_simulation_time:  f64,    // simulation time spent (varies according to simulation rate)
+    pub dt:                     f64,    // current delta time (realtime)
+    pub avg_dt:                 f64,    // current delta time (realtime, averaged)
+    pub sim_dt:                 f64,    // current delta time in the simulation
 }
+impl Time { pub fn new () -> Time { Default::default() } }
+
 // duration_float isn't standard yet -_-
 fn to_f64 (duration: time::Duration) -> f64 {
     return ((duration.as_micros() as u64) as i64) as f64 * (1e-6 as f64)
