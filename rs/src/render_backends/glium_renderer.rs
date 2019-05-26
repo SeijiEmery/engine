@@ -9,47 +9,37 @@ use crate::glium;
 pub struct GliumRenderer {
     display: glium::Display,
     frame: glium::Frame,
-    shape_renderer: ShapeRenderer,
+    renderer: GLSLRenderer,
     render_list: Vec<RenderItem>,
 }
 impl GliumRenderer {
     pub fn new (display: glium::Display) -> GliumRenderer {
         let mut frame = display.draw(); frame.set_finish().unwrap();
-        let shape_renderer = ShapeRenderer::new(&display);
+        let renderer = GLSLRenderer::new(&display);
         let render_list = Vec::<RenderItem>::new();
-        return GliumRenderer { display, shape_renderer, frame, render_list }
+        return GliumRenderer { display, renderer, frame, render_list }
     }
 }
 impl GliumRenderer {
     fn draw_items (&mut self) {
         // sort by depth
         use std::cmp::Ord;
-
-
         self.render_list.sort_by(|a, b| a.depth.partial_cmp(&b.depth).unwrap());
 
         // draw opaque items first, then transparent
-
-        // fuck it
+        // note: f***ed a lot around with drain_filter (requires nightly, this f***s up a lot of
+        // things, partition (inefficient b/c doesn't reuse memory; also a PITA to use))
+        // this is stupid but it works
         for item in &self.render_list {
             if !item.transparent {
-                self.shape_renderer.draw(&mut self.frame, &item);
+                self.renderer.draw(&mut self.frame, &item);
             }
         }
         for item in &self.render_list {
             if item.transparent {
-                self.shape_renderer.draw(&mut self.frame, &item);
+                self.renderer.draw(&mut self.frame, &item);
             }
         }
-
-//        let (transparent, opaque) : (&Vec<RenderItem>, &Vec<RenderItem>)
-//            = self.render_list.into_iter().partition(|item| item.transparent);
-//        for item in opaque {
-//            self.shape_renderer.draw(&mut self.frame, &item);
-//        }
-//        for item in transparent {
-//            self.shape_renderer.draw(&mut self.frame, &item);
-//        }
     }
 }
 impl Renderer for GliumRenderer {
@@ -74,14 +64,14 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position);
 
-struct ShapeRenderer {
+struct GLSLRenderer {
     quad_vertices: glium::VertexBuffer<Vertex>,
     quad_indices: glium::index::NoIndices,
     shape_shader: glium::Program,
     render_items: Vec<RenderItem>,
 }
-impl ShapeRenderer {
-    fn new (display: &glium::Display) -> ShapeRenderer {
+impl GLSLRenderer {
+    fn new (display: &glium::Display) -> GLSLRenderer {
         let vertices = vec![
             Vertex { position: [ -0.5,  0.5 ] },
             Vertex { position: [ -0.5, -0.5 ] },
@@ -148,7 +138,7 @@ impl ShapeRenderer {
             &display, shape_vertex_shader, shape_fragment_shader, None,
         ).unwrap();
         let render_items = Vec::<RenderItem>::new();
-        return ShapeRenderer { quad_vertices, quad_indices, shape_shader, render_items };
+        return GLSLRenderer { quad_vertices, quad_indices, shape_shader, render_items };
     }
     fn draw_with_params (&self, frame: &mut glium::Frame, transform: &Mat4, draw_function: &str, outline: f32, color: Color, transparent: bool) {
         let uniforms = uniform! [
