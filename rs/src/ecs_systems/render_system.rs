@@ -32,20 +32,19 @@ impl<'a> System<'a> for ShapeRendererSystem {
         let camera = &_camera;
         for (transform, shape, material, render_info) in (&transform, &shape, &material, &render_info).join() {
             if render_info.visible {
+                let depth = transform.depth();
+                let transform = transform.local_to_camera_space_matrix(camera);
+                let transparent = material.color.a < 1.0;
                 match shape {
                     ShapeComponent::Box(_shape) => {
                         match render_info.outline {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineBox(outline, material.color),
-                                transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth(),
-                                transparent: material.color.a < 1.0
+                                transform, depth, transparent
                             }),
                             None => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::SolidBox(material.color),
-                                transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth(),
-                                transparent: material.color.a < 1.0
+                                transform, depth, transparent
                             })
                         }
                     },
@@ -53,15 +52,11 @@ impl<'a> System<'a> for ShapeRendererSystem {
                         match render_info.outline {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineCircle(outline, material.color),
-                                transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth(),
-                                transparent: material.color.a < 1.0
+                                transform, depth, transparent
                             }),
                             None => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::SolidCircle(material.color),
-                                transform: transform.local_to_camera_space_matrix(camera),
-                                depth: transform.depth(),
-                                transparent: material.color.a < 1.0
+                                transform, depth, transparent
                             })
                         }
                     }
