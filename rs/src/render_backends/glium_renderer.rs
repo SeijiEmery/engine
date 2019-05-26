@@ -115,11 +115,11 @@ impl ShapeRenderer {
             subroutine uniform shape_shader shading_mode;
 
             subroutine(shape_shader) void draw_solid_box () {
-                out_color = color;
+                out_color = vec4(color.rgb * color.a, color.a);
             }
             subroutine(shape_shader) void draw_solid_circle () {
                 if (dot(local_coords, local_coords) < 1.0) {
-                    out_color = color;
+                    out_color = vec4(color.rgb * color.a, color.a);
                 } else {
                     discard;
                 }
@@ -127,7 +127,7 @@ impl ShapeRenderer {
             subroutine(shape_shader) void draw_outline_box () {
                 vec2 from_center = abs(local_coords);
                 if (max(from_center.x, from_center.y) >= 1.0 - outline_width) {
-                    out_color = color;
+                    out_color = vec4(color.rgb * color.a, color.a);
                 } else {
                     discard;
                 }
@@ -135,7 +135,7 @@ impl ShapeRenderer {
             subroutine(shape_shader) void draw_outline_circle () {
                 float from_center = dot(local_coords, local_coords);
                 if (from_center <= 1.0 && from_center >= 1.0 - outline_width) {
-                    out_color = color;
+                    out_color = vec4(color.rgb * color.a, color.a);
                 } else {
                     discard;
                 }
@@ -167,7 +167,7 @@ impl ShapeRenderer {
             blend: Blend::alpha_blending(),
             .. Default::default()
         };
-        let dp = &DP_OPAQUE;
+        let dp = &DP_TRANSPARENT;
 //        let dp = if transparent { &DP_TRANSPARENT } else { &DP_OPAQUE };
         frame.draw(
             &self.quad_vertices,
@@ -176,6 +176,7 @@ impl ShapeRenderer {
             &dp).unwrap();
     }
     fn draw (&self, frame: &mut glium::Frame, item: &RenderItem) {
+//        println!("Drawing {:?}", item);
         match item.primitive {
             RenderPrimitive::SolidBox(color) => self.draw_with_params(frame, &item.transform, "draw_solid_box", 0.0, color, item.transparent),
             RenderPrimitive::SolidCircle(color) => self.draw_with_params(frame, &item.transform, "draw_solid_circle", 0.0, color, item.transparent),
