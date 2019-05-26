@@ -9,103 +9,33 @@ use specs::{Component, System, ReadStorage, Read, WriteStorage, VecStorage, Join
 use specs::world::Builder;
 use engine_rs::ecs_components::render_components::{MaterialComponent, ShapeComponent, ShapeRendererComponent};
 use engine_rs::ecs_components::transform_components::TransformComponent;
+mod player_input;
+mod player;
+use player_input::{PlayerInput};
 
-#[derive(Default)]
-struct PlayerInput {
-    left_pressed: bool,
-    right_pressed: bool,
-    velocity: f64
-}
-impl PlayerInput {
-    fn new () -> PlayerInput { Default::default() }
-    fn dir (&self) -> f32 { self.velocity as f32 }
-    fn update (&mut self, time: &Time) {
-        let mut dir = 0.0;
-        if self.left_pressed { dir -= 1.0 }
-        if self.right_pressed { dir += 1.0 }
-        self.velocity -= self.velocity * 5.0 * time.dt;
-        self.velocity += dir * 10.0 * time.dt;
-        if self.velocity > 1.0 { self.velocity = 1.0 }
-        if self.velocity < -1.0 { self.velocity = -1.0 }
-    }
-    fn on_event (&mut self, ev: &glutin::Event) {
-        match ev {
-            glutin::Event::WindowEvent {
-                event: glutin::WindowEvent::KeyboardInput {
-                    input: glutin::KeyboardInput {
-                        virtual_keycode: Some(key),
-                        state, ..
-                    }, ..
-                }, ..
-            } => {
-                match key {
-                    glutin::VirtualKeyCode::Left | glutin::VirtualKeyCode::A => {
-                        self.left_pressed = match state {
-                            glutin::ElementState::Pressed => true,
-                            glutin::ElementState::Released => false
-                        }
-                    }
-                    glutin::VirtualKeyCode::Right | glutin::VirtualKeyCode::D => {
-                        self.right_pressed = match state {
-                            glutin::ElementState::Pressed => true,
-                            glutin::ElementState::Released => false
-                        }
-                    }, _ => ()
-                }
-            },
-            _ => ()
-        }
-    }
-}
-
-struct PlayerComponent { min_x: f32, max_x: f32, speed: f32 }
-impl Component for PlayerComponent { type Storage = VecStorage<PlayerComponent>; }
-struct PlayerInputSystem {}
-impl<'a> System<'a> for PlayerInputSystem {
-    type SystemData = (
-        Read<'a, Time>,
-        Read<'a, PlayerInput>,
-        ReadStorage<'a, PlayerComponent>,
-        WriteStorage<'a, TransformComponent>
-    );
-    fn run (&mut self, (time, input, player, mut transform): Self::SystemData) {
-        let time = &*time;
-        let input = &*input;
-        for (player, mut transform) in (&player, &mut transform).join() {
-            let mut x = transform.pos.x + player.speed * input.dir() * (time.dt as f32);
-            if x < player.min_x { x = player.min_x; }
-            if x > player.max_x { x = player.max_x; }
-            transform.pos.x = x;
-        }
-    }
-}
 
 #[derive(Default)]
 struct PongGame {
-
+    player1: Option<specs::Entity>,
+    player2: Option<specs::Entity>,
+    ball: Option<specs::Entity>
 }
 impl GameDelegate for PongGame {
     fn register_components (&mut self, entities: &mut specs::World) {
         let main_camera : ActiveCamera = Camera::new();
-        entities.register::<MaterialComponent>();
-        entities.register::<TransformComponent>();
-        entities.register::<ShapeComponent>();
-        entities.register::<ShapeRendererComponent>();
-        entities.register::<PlayerComponent>();
         entities.add_resource(main_camera);
-        entities.add_resource(PlayerInput::new());
 
-        // player paddle
-        entities.create_entity()
-            .with(PlayerComponent { speed: 2.0, min_x: -0.7, max_x: 0.7 })
-            .with( TransformComponent { pos: vec3(0.0, -0.85, 1.0), scale: vec2(0.3, 0.08), rot: Rad(0.0) })
-            .with(ShapeComponent::Box(BoxShape{ w: 0.5, h: 0.2 }))
-            .with(ShapeRendererComponent { visible: true, outline: None })
-            .with(MaterialComponent { color: Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 } })
-            .build();
+        player::register_entities(entities);
+        self.player1 = Some(player::make_player(entities,
+            1, 2.0, vec3(1.0, 1.0, 1.0),
+            -0.85, 0.7, vec2(0.3, 0.08)));
+        self.player2 = Some(player::make_player(entities,
+            2, 2.0, vec3(1.0, 1.0, 1.0),
+            0.85, 0.7, vec2(0.3, 0.08)));
+        entities.add_resource(PlayerInput::new());
     }
     fn register_systems (&mut self, systems: &mut specs::DispatcherBuilder, renderer: &mut RendererBackend) {
-        systems.add(PlayerInputSystem{}, "player input", &[]);
+        player::register_systems(systems);
         systems.add_thread_local(ShapeRendererSystem::new(renderer));
     }
     fn handle_event (&mut self, event: &glium::glutin::Event, state: &mut GameLoopState) {
