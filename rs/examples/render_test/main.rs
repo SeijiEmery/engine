@@ -4,17 +4,11 @@ use engine_rs::{GameDelegate, RendererBackend, GameLoopState};
 use engine_rs::*;
 use engine_rs::{ActiveCamera, Camera, BoxShape, CircleShape};
 use engine_rs::{ShapeRendererSystem};
-#[macro_use]
-use specs_derive;
-#[macro_use]
 use specs;
-#[macro_use]
-use specs::prelude::*;
-use specs::{Component, System, SystemData, ReadStorage, Read, WriteStorage};
+use specs::{Component, System, ReadStorage, Read, WriteStorage, VecStorage, Join};
 use specs::world::Builder;
 use engine_rs::ecs_components::render_components::{MaterialComponent, ShapeComponent, ShapeRendererComponent};
 use engine_rs::ecs_components::transform_components::TransformComponent;
-use core::borrow::Borrow;
 
 //#[derive(Component)]
 //#[storage(VecStorage)]
@@ -159,7 +153,7 @@ impl GameDelegate for RenderTest {
                 max_scale: vec2(0.7, 0.05),
                 speed: vec2(5.0, 10.0)
             })
-            .with(RotateMotion { speed: 1.0 })
+            .with(RotateMotion { speed: 10.0 })
             .with(MaterialComponent::new(0.8, 0.8, 0.2, 1.0))
             .with(TransformComponent::new().with_depth(0.8).with_pos(0.4, -0.6).with_scale(0.2).with_angle(0.523))
             .with(ShapeComponent::Circle(CircleShape{ r: 1.0 }))

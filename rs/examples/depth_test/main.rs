@@ -2,19 +2,12 @@
 extern crate engine_rs;
 use engine_rs::{GameDelegate, RendererBackend, GameLoopState};
 use engine_rs::*;
-use engine_rs::{ActiveCamera, Camera, BoxShape, CircleShape};
+use engine_rs::{ActiveCamera, Camera, BoxShape};
 use engine_rs::{ShapeRendererSystem};
-#[macro_use]
-use specs_derive;
-#[macro_use]
 use specs;
-#[macro_use]
-use specs::prelude::*;
-use specs::{Component, System, SystemData, ReadStorage, Read, WriteStorage};
 use specs::world::Builder;
 use engine_rs::ecs_components::render_components::{MaterialComponent, ShapeComponent, ShapeRendererComponent};
 use engine_rs::ecs_components::transform_components::TransformComponent;
-use core::borrow::Borrow;
 
 fn red   (a: f32) -> MaterialComponent { MaterialComponent::new(1.0, 0.0, 0.0, a) }
 fn green (a: f32) -> MaterialComponent { MaterialComponent::new(0.0, 1.0, 0.0, a) }
