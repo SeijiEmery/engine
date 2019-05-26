@@ -50,10 +50,10 @@ impl FrameRateLimiter {
             / to_f64(last_frame_interval) / FRAMERATE_OVERSHOOT_FACTOR;
         let target_soft_adjust = 1.0 - (1.0 - target_hard_adjust) * FRAMERATE_DYNAMIC_TARGET_SWITCHING_RATE;
         let new_target = multiply_f64(self.dynamic_target, target_soft_adjust);
-        println!("adjusting dynamic target from {:?} -> {:?} ({:?} / {:?} = {:?} hard => {:?} soft",
-                 self.dynamic_target, new_target,
-                self.target_frame_interval, last_frame_interval,
-                target_hard_adjust, target_soft_adjust);
+//        println!("adjusting dynamic target from {:?} -> {:?} ({:?} / {:?} = {:?} hard => {:?} soft",
+//                 self.dynamic_target, new_target,
+//                self.target_frame_interval, last_frame_interval,
+//                target_hard_adjust, target_soft_adjust);
         self.dynamic_target = new_target;
     }
     pub fn maybe_sleep_to_hit_framerate_target (&mut self, time_elapsed: time::Duration) {

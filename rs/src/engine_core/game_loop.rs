@@ -70,9 +70,9 @@ impl<'a, 'b> GameLoop <'a, 'b> {
             // Calculate / update framerate, delta time, and simulation stuff
             let mut state = &mut self.state;
             state.time.begin_frame();
-            let now = state.time.absolute_time_since_started();
-            state.time.current_fps().map(|fps| println!("time = {:?}, dt = {:?}, avg dt = {:?}, framerate = {:?}",
-                                                        now, state.time.delta_time(), state.time.avg_delta_time(), fps));
+//            let now = state.time.absolute_time_since_started();
+//            state.time.current_fps().map(|fps| println!("time = {:?}, dt = {:?}, avg dt = {:?}, framerate = {:?}",
+//                                                        now, state.time.delta_time(), state.time.avg_delta_time(), fps));
 
             // Run on_begin_frame() user code (after updating time info)
             game_delegate.on_begin_frame();
