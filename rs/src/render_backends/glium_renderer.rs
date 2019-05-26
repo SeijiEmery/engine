@@ -127,7 +127,7 @@ impl ShapeRenderer {
             outline_width: outline,
             color: color
         ];
-        use glium::draw_parameters::{DrawParameters, Depth, DepthTest, DepthClamp};
+        use glium::draw_parameters::{DrawParameters, Depth, DepthTest, DepthClamp, Blend};
         frame.draw(
             &self.quad_vertices,
             self.quad_indices,
@@ -139,6 +139,7 @@ impl ShapeRenderer {
                     range: (0.0, 1.),
                     clamp: DepthClamp::Clamp
                 },
+                blend: Blend::alpha_blending(),
                 .. Default::default()
             });
     }
