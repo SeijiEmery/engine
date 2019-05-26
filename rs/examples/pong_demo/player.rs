@@ -2,7 +2,7 @@ use engine_rs::{Time, TransformComponent, Vec2, Vec3, vec3, Rad, ShapeComponent,
                 ShapeRendererComponent, MaterialComponent, Color};
 use specs::{Entity, World, Read, ReadStorage, WriteStorage, VecStorage, DispatcherBuilder,
             Component, System, Join, EntityBuilder };
-use crate::player_input::PlayerInput;
+use crate::player_input::MultiplayerInput;
 use specs::world::Builder;
 
 pub fn register_entities (entities: &mut World) {
@@ -32,7 +32,7 @@ struct PlayerInputSystem {}
 impl<'a> System<'a> for PlayerInputSystem {
     type SystemData = (
         Read<'a, Time>,
-        Read<'a, PlayerInput>,
+        Read<'a, MultiplayerInput>,
         ReadStorage<'a, PlayerComponent>,
         WriteStorage<'a, TransformComponent>
     );
@@ -40,6 +40,7 @@ impl<'a> System<'a> for PlayerInputSystem {
         let time = &*time;
         let input = &*input;
         for (player, mut transform) in (&player, &mut transform).join() {
+            let input = input.get(player.id).unwrap();
             let mut x = transform.pos.x + player.speed * input.dir() * (time.dt as f32);
             if x < player.min_x { x = player.min_x; }
             if x > player.max_x { x = player.max_x; }

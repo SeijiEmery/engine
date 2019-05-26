@@ -11,8 +11,8 @@ use engine_rs::ecs_components::render_components::{MaterialComponent, ShapeCompo
 use engine_rs::ecs_components::transform_components::TransformComponent;
 mod player_input;
 mod player;
-use player_input::{PlayerInput};
-
+use player_input::{MultiplayerInput, PlayerInputState, PlayerKeyBindings};
+use glium::index::IndicesSource::MultidrawArray;
 
 #[derive(Default)]
 struct PongGame {
@@ -32,18 +32,23 @@ impl GameDelegate for PongGame {
         self.player2 = Some(player::make_player(entities,
             2, 2.0, vec3(1.0, 1.0, 1.0),
             0.85, 0.7, vec2(0.3, 0.08)));
-        entities.add_resource(PlayerInput::new());
+
+        let player1= PlayerInputState::new(PlayerKeyBindings::Arrows);
+        let player2 = PlayerInputState::new(PlayerKeyBindings::WASD);
+//        let player2 = PlayerInputState::new(PlayerKeyBindings::None);
+        let input = MultiplayerInput { player1, player2 };
+        entities.add_resource(input);
     }
     fn register_systems (&mut self, systems: &mut specs::DispatcherBuilder, renderer: &mut RendererBackend) {
         player::register_systems(systems);
         systems.add_thread_local(ShapeRendererSystem::new(renderer));
     }
     fn handle_event (&mut self, event: &glium::glutin::Event, state: &mut GameLoopState) {
-        let input = &mut *state.ecs.write_resource::<PlayerInput>();
+        let input = &mut *state.ecs.write_resource::<MultiplayerInput>();
         input.on_event(event);
     }
     fn on_begin_frame (&mut self, state: &mut GameLoopState) {
-        let input = &mut *state.ecs.write_resource::<PlayerInput>();
+        let input = &mut *state.ecs.write_resource::<MultiplayerInput>();
         let time = &*state.ecs.read_resource::<Time>();
         input.update(time);
     }
