@@ -26,7 +26,7 @@ impl GliumRenderer {
         use std::cmp::Ord;
 
 
-        self.render_list.sort_by(|a, b| b.depth.partial_cmp(&a.depth).unwrap());
+        self.render_list.sort_by(|a, b| a.depth.partial_cmp(&b.depth).unwrap());
 
         // draw opaque items first, then transparent
 
@@ -167,8 +167,7 @@ impl ShapeRenderer {
             blend: Blend::alpha_blending(),
             .. Default::default()
         };
-        let dp = &DP_TRANSPARENT;
-//        let dp = if transparent { &DP_TRANSPARENT } else { &DP_OPAQUE };
+        let dp = if transparent { &DP_TRANSPARENT } else { &DP_OPAQUE };
         frame.draw(
             &self.quad_vertices,
             self.quad_indices,
