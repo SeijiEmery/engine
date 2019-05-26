@@ -37,11 +37,13 @@ impl<'a> System<'a> for ShapeRendererSystem {
                         match render_info.outline {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineBox(outline, material.color),
-                                transform: transform.local_to_camera_space_matrix(camera)
+                                transform: transform.local_to_camera_space_matrix(camera),
+                                depth: transform.depth()
                             }),
                             None => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::SolidBox(material.color),
-                                transform: transform.local_to_camera_space_matrix(camera)
+                                transform: transform.local_to_camera_space_matrix(camera),
+                                depth: transform.depth()
                             })
                         }
                     },
@@ -49,11 +51,13 @@ impl<'a> System<'a> for ShapeRendererSystem {
                         match render_info.outline {
                             Some(outline) => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::OutlineCircle(outline, material.color),
-                                transform: transform.local_to_camera_space_matrix(camera)
+                                transform: transform.local_to_camera_space_matrix(camera),
+                                depth: transform.depth()
                             }),
                             None => renderer.draw(RenderItem {
                                 primitive: RenderPrimitive::SolidCircle(material.color),
-                                transform: transform.local_to_camera_space_matrix(camera)
+                                transform: transform.local_to_camera_space_matrix(camera),
+                                depth: transform.depth()
                             })
                         }
                     }

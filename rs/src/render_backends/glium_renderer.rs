@@ -10,32 +10,46 @@ pub struct GliumRenderer {
     display: glium::Display,
     frame: glium::Frame,
     shape_renderer: ShapeRenderer,
+    render_list: Vec<RenderItem>,
 }
 impl GliumRenderer {
     pub fn new (display: glium::Display) -> GliumRenderer {
         let mut frame = display.draw(); frame.set_finish().unwrap();
         let shape_renderer = ShapeRenderer::new(&display);
-        return GliumRenderer { display, shape_renderer, frame }
+        let render_list = Vec::<RenderItem>::new();
+        return GliumRenderer { display, shape_renderer, frame, render_list }
+    }
+}
+impl GliumRenderer {
+    fn draw_items (&mut self) {
+        use std::cmp::Ord;
+        self.render_list.sort_by(|a, b|
+            a.depth.partial_cmp(&b.depth).unwrap());
+        for item in &self.render_list {
+            match item.primitive {
+                //            RenderPrimitive::SolidBox(Color) => println!("unimplemented: render solid box!"),
+                //            RenderPrimitive::SolidCircle(Color) => println!("unimplemented: render solid circle!"),
+                //            RenderPrimitive::OutlineBox(f32, Color) => println!("unimplemented: render outlined box!"),
+                //            RenderPrimitive::OutlineCircle(f32, Color) => println!("unimplemented: render outlined circle!"),
+                RenderPrimitive::Sprite(_) => println!("unimplemented: render sprite!"),
+                RenderPrimitive::Text(_) => println!("unimplemented: render text!"),
+                _ => self.shape_renderer.draw(&mut self.frame, &item.transform, &item.primitive),
+            }
+        }
     }
 }
 impl Renderer for GliumRenderer {
     fn draw (&mut self, item: RenderItem) {
-        match item.primitive {
-            //            RenderPrimitive::SolidBox(Color) => println!("unimplemented: render solid box!"),
-            //            RenderPrimitive::SolidCircle(Color) => println!("unimplemented: render solid circle!"),
-            //            RenderPrimitive::OutlineBox(f32, Color) => println!("unimplemented: render outlined box!"),
-            //            RenderPrimitive::OutlineCircle(f32, Color) => println!("unimplemented: render outlined circle!"),
-            RenderPrimitive::Sprite(_) => println!("unimplemented: render sprite!"),
-            RenderPrimitive::Text(_) => println!("unimplemented: render text!"),
-            _ => self.shape_renderer.draw(&mut self.frame, item.transform, item.primitive),
-        }
+        self.render_list.push(item);
     }
     fn begin_frame (&mut self) {
         let mut frame = self.display.draw();
         frame.clear_all((0.0, 0.0, 0.0, 0.0),0.0, 0);
+        self.render_list.clear();
         self.frame = frame;
     }
     fn end_frame (&mut self) {
+        self.draw_items();
         self.frame.set_finish().unwrap();
     }
 }
@@ -50,6 +64,7 @@ struct ShapeRenderer {
     quad_vertices: glium::VertexBuffer<Vertex>,
     quad_indices: glium::index::NoIndices,
     shape_shader: glium::Program,
+    render_items: Vec<RenderItem>,
 }
 impl ShapeRenderer {
     fn new (display: &glium::Display) -> ShapeRenderer {
@@ -118,14 +133,15 @@ impl ShapeRenderer {
         let shape_shader = glium::Program::from_source(
             &display, shape_vertex_shader, shape_fragment_shader, None,
         ).unwrap();
-        return ShapeRenderer { quad_vertices, quad_indices, shape_shader };
+        let render_items = Vec::<RenderItem>::new();
+        return ShapeRenderer { quad_vertices, quad_indices, shape_shader, render_items };
     }
-    fn draw_with_params (&self, frame: &mut glium::Frame, transform: Mat4, mode: &str, outline: f32, color: Color) {
+    fn draw_with_params (&self, frame: &mut glium::Frame, transform: &Mat4, mode: &str, outline: f32, color: &Color) {
         let uniforms = uniform! [
-            transform: array4x4(transform),
+            transform: array4x4(*transform),
             shading_mode: (mode, glium::program::ShaderStage::Fragment),
             outline_width: outline,
-            color: color
+            color: *color
         ];
         use glium::draw_parameters::{DrawParameters, Depth, DepthTest, DepthClamp, Blend};
         frame.draw(
@@ -139,16 +155,16 @@ impl ShapeRenderer {
                     range: (0.0, 1.),
                     clamp: DepthClamp::Clamp
                 },
-                blend: Blend::alpha_blending(),
+//                blend: Blend::alpha_blending(),
                 .. Default::default()
             });
     }
-    fn draw (&self, frame: &mut glium::Frame, transform: Mat4, primitive: RenderPrimitive) {
+    fn draw (&self, frame: &mut glium::Frame, transform: &Mat4, primitive: &RenderPrimitive) {
         match primitive {
             RenderPrimitive::SolidBox(color) => self.draw_with_params(frame, transform, "draw_solid_box", 0.0, color),
             RenderPrimitive::SolidCircle(color) => self.draw_with_params(frame, transform, "draw_solid_circle", 0.0, color),
-            RenderPrimitive::OutlineBox(width, color) => self.draw_with_params(frame, transform, "draw_outline_box", width, color),
-            RenderPrimitive::OutlineCircle(width, color) => self.draw_with_params(frame, transform, "draw_outline_circle", width, color),
+            RenderPrimitive::OutlineBox(width, color) => self.draw_with_params(frame, transform, "draw_outline_box", *width, color),
+            RenderPrimitive::OutlineCircle(width, color) => self.draw_with_params(frame, transform, "draw_outline_circle", *width, color),
             _ => ()
         }
     }

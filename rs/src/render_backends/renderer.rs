@@ -2,6 +2,7 @@ pub use crate::engine_utils::*;
 pub use cgmath::Matrix4;
 pub use std::rc::Rc;
 pub use std::cell::RefCell;
+use std::cmp::{PartialOrd, Ordering};
 
 #[derive(Debug)]
 pub struct SpriteRef;
@@ -20,7 +21,9 @@ pub enum RenderPrimitive {
 pub struct RenderItem {
     pub primitive: RenderPrimitive,
     pub transform: Mat4,
+    pub depth: f32,
 }
+
 pub trait Renderer {
     fn draw (&mut self, item: RenderItem);
     fn begin_frame

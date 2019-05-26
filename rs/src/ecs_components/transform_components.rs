@@ -20,6 +20,7 @@ impl TransformComponent {
             rot: Rad(0.0)
         }
     }
+    pub fn depth (&self) -> f32 { self.pos.z }
     pub fn with_pos (&self, x: f32, y: f32) -> TransformComponent {
         return TransformComponent { pos: Vector3 { x, y, z: 0.0 }, scale: self.scale, rot: self.rot };
     }
