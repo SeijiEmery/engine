@@ -26,7 +26,7 @@ impl GliumRenderer {
         use std::cmp::Ord;
 
 
-        self.render_list.sort_by(|a, b| a.depth.partial_cmp(&b.depth).unwrap());
+        self.render_list.sort_by(|a, b| b.depth.partial_cmp(&a.depth).unwrap());
 
         // draw opaque items first, then transparent
 
