@@ -77,8 +77,6 @@ impl GameDelegate for PongGame {
                 target.pos *= 2.0;
                 target.pos.x -= 1.0;
                 target.pos.y = 1.0 - target.pos.y;
-
-                println!("mouse: {:?} => {:?}", position, target.pos);
             }, _ => ()
         }
     }
