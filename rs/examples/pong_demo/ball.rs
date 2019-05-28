@@ -77,9 +77,23 @@ impl<'a> System<'a> for BallPhysicsSystem {
         let time = &*time;
         let aspect_ratio = (&*aspect_ratio).0;
         for mut ball in (&mut balls).join() {
+
+            // update ball position
+            let starting_pos = ball.pos;
+            if ball.enable_movement {
+                ball.pos += ball.velocity * time.dt as f32;
+            }
+            let mut changed_velocity = false;
+
             // resolve ball / wall collisions
-            if ball.pos.x.abs() > ball.bounds.x && (ball.pos.x < 0.0) == (ball.velocity.x < 0.0) { ball.velocity.x *= -1.0; }
-            if ball.pos.y.abs() > ball.bounds.y && (ball.pos.y < 0.0) == (ball.velocity.y < 0.0) { ball.velocity.y *= -1.0; }
+            if ball.pos.x.abs() > ball.bounds.x && (ball.pos.x < 0.0) == (ball.velocity.x < 0.0) {
+                changed_velocity = true;
+                ball.velocity.x *= -1.0;
+            }
+            if ball.pos.y.abs() > ball.bounds.y && (ball.pos.y < 0.0) == (ball.velocity.y < 0.0) {
+                changed_velocity = true;
+                ball.velocity.y *= -1.0;
+            }
 
             // resolve ball / paddle collisions
             for (paddle, box_transform, mut paddle_material) in (&paddles, &transforms, &mut materials).join() {
@@ -100,6 +114,7 @@ impl<'a> System<'a> for BallPhysicsSystem {
                     || (cbs_abs.x < box_size.x + ball.radius && cbs_abs.y < box_size.y)
                     || (cbs_abs.y < box_size.y + ball.radius && cbs_abs.x < box_size.x)
                 {
+                    changed_velocity = true;
                     paddle_material.color = Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
                     if (ball.velocity.y < 0.0) == (box_transform.pos.y < 0.0) {
                         let ball_speed = ball.velocity.magnitude();
@@ -111,9 +126,9 @@ impl<'a> System<'a> for BallPhysicsSystem {
                     paddle_material.color = Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
                 }
             }
-            // update ball position
-            if ball.enable_movement {
-                ball.pos += ball.velocity * time.dt as f32;
+            // recalculate position if / when setting velocity (prevents the ball from clipping through things...)
+            if changed_velocity {
+                ball.pos = starting_pos + ball.velocity * time.dt as f32;
             }
         }
         for (ball, mut transform) in (&balls, &mut transforms).join() {
