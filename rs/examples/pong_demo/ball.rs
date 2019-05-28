@@ -54,6 +54,15 @@ impl<'a> System<'a> for DebugMakeBallFollowCursorSystem {
     }
 }
 
+#[derive(Default)]
+pub struct AspectRatio(f32);
+impl AspectRatio {
+    pub fn new (aspect_ratio: f32) -> AspectRatio { AspectRatio(aspect_ratio) }
+    pub fn set (&mut self, aspect_ratio: f32) {
+        self.0 = aspect_ratio;
+    }
+}
+
 struct BallPhysicsSystem {}
 impl<'a> System<'a> for BallPhysicsSystem {
     type SystemData = (
@@ -62,9 +71,11 @@ impl<'a> System<'a> for BallPhysicsSystem {
         WriteStorage<'a, TransformComponent>,
         ReadStorage<'a, PaddleComponent>,
         WriteStorage<'a, MaterialComponent>,
+        Read<'a, AspectRatio>,
     );
-    fn run (&mut self, (time, mut balls, mut transforms, paddles, mut materials): Self::SystemData) {
+    fn run (&mut self, (time, mut balls, mut transforms, paddles, mut materials, aspect_ratio): Self::SystemData) {
         let time = &*time;
+        let aspect_ratio = (&*aspect_ratio).0;
         for mut ball in (&mut balls).join() {
             // resolve ball / wall collisions
             if ball.pos.x.abs() > ball.bounds.x && (ball.pos.x < 0.0) == (ball.velocity.x < 0.0) { ball.velocity.x *= -1.0; }
@@ -108,6 +119,7 @@ impl<'a> System<'a> for BallPhysicsSystem {
         for (ball, mut transform) in (&balls, &mut transforms).join() {
             transform.pos.x = ball.pos.x;
             transform.pos.y = ball.pos.y;
+            transform.scale.y = transform.scale.x * aspect_ratio;
         }
     }
 }

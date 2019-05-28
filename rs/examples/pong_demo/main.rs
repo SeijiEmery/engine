@@ -39,11 +39,13 @@ impl GameDelegate for PongGame {
         let player1= PlayerInputState::new(PlayerKeyBindings::Arrows);
         let player2 = PlayerInputState::new(PlayerKeyBindings::WASD);
         let white = vec3(1.0, 1.0, 1.0);
-        let ball = ball::make_ball(entities, vec2(0.0, 0.0), vec2(-0.8, 0.2), vec2(0.85, 0.85), white, 0.1);
+        let ball = ball::make_ball(entities, vec2(0.0, 0.0), vec2(-0.8, 0.2),
+                                   vec2(0.85, 0.85), white, 0.08);
 //        let player2 = PlayerInputState::new(PlayerKeyBindings::None);
         let input = MultiplayerInput { player1, player2 };
         entities.add_resource(input);
         entities.add_resource(ball::CursorTarget{ pos: vec2(0.0, 0.0)});
+        entities.add_resource(ball::AspectRatio::new(1.0));
     }
     fn register_systems (&mut self, systems: &mut specs::DispatcherBuilder, renderer: &mut RendererBackend) {
         player::register_systems(systems);
@@ -59,6 +61,8 @@ impl GameDelegate for PongGame {
             } => {
                 self.window_width = size.width as f32;
                 self.window_height = size.height as f32;
+                let aspect_ratio = &mut *state.ecs.write_resource::<ball::AspectRatio>();
+                aspect_ratio.set(size.width as f32 / size.height as f32);
             },
             glium::glutin::Event::WindowEvent {
                 event: glutin::WindowEvent::CursorMoved {
