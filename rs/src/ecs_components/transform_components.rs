@@ -5,7 +5,7 @@ use specs::prelude::*;
 //use crate::engine_utils::*;
 use crate::engine_utils::{Vec3, Vec2, Rad, Vector2, Vector3, Mat4, Camera};
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 #[storage(VecStorage)]
 pub struct TransformComponent {
     pub pos:    Vec3,
