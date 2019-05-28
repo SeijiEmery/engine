@@ -4,6 +4,7 @@ use specs::{Entity, World, Read, ReadStorage, WriteStorage, VecStorage, Dispatch
             Component, System, Join, EntityBuilder };
 use crate::player_input::MultiplayerInput;
 use specs::world::Builder;
+use cgmath::InnerSpace;
 
 pub fn register_entities (entities: &mut World) {
     entities.register::<BallComponent>();
@@ -38,23 +39,34 @@ impl<'a> System<'a> for BallPhysicsSystem {
         WriteStorage<'a, BallComponent>,
         WriteStorage<'a, TransformComponent>,
         ReadStorage<'a, PaddleComponent>,
+        WriteStorage<'a, MaterialComponent>,
     );
-    fn run (&mut self, (time, mut ball, mut transforms, paddle): Self::SystemData) {
+    fn run (&mut self, (time, mut balls, mut transforms, paddles, mut materials): Self::SystemData) {
         let time = &*time;
-        for mut ball in (&mut ball).join() {
-            // update ball position
-            ball.pos += ball.velocity * time.dt as f32;
-
+        for mut ball in (&mut balls).join() {
             // resolve ball / wall collisions
-            if ball.pos.x.abs() > ball.bounds.x { ball.velocity.x *= -1.0; }
-            if ball.pos.y.abs() > ball.bounds.y { ball.velocity.y *= -1.0; }
+            if ball.pos.x.abs() > ball.bounds.x && (ball.pos.x < 0.0) == (ball.velocity.x < 0.0) { ball.velocity.x *= -1.0; }
+            if ball.pos.y.abs() > ball.bounds.y && (ball.pos.y < 0.0) == (ball.velocity.y < 0.0) { ball.velocity.y *= -1.0; }
 
             // resolve ball / paddle collisions
-            for (paddle, box_transform) in (&paddle, &transforms).join() {
+            for (paddle, box_transform, mut paddle_material) in (&paddles, &transforms, &mut materials).join() {
+                let box_size = box_transform.scale;
+                let bcs = vec2(box_transform.pos.x, box_transform.pos.y) - ball.pos; // box in circle coords
 
+                paddle_material.color = Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
+                if bcs.x.abs() - box_size.x < 0.0 && bcs.y.abs() - box_size.x < 0.0
+                    && (ball.velocity.y < 0.0) == (box_transform.pos.y < 0.0) {
+                    paddle_material.color = Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
+                    let ball_speed = ball.velocity.magnitude();
+                    let hit_pos_normalized = (ball.pos.x - box_transform.pos.x) / box_transform.scale.x;
+                    let up : f32 = if ball.velocity.y <= 0.0 { 1.0 } else { -1.0 };
+                    ball.velocity = vec2(hit_pos_normalized, up).normalize_to(ball_speed);
+                }
             }
+            // update ball position
+            ball.pos += ball.velocity * time.dt as f32;
         }
-        for (ball, mut transform) in (&ball, &mut transforms).join() {
+        for (ball, mut transform) in (&balls, &mut transforms).join() {
             transform.pos.x = ball.pos.x;
             transform.pos.y = ball.pos.y;
         }
