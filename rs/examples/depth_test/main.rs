@@ -54,9 +54,9 @@ impl GameDelegate for DepthTest {
         systems.add_thread_local(ShapeRendererSystem::new(renderer));
     }
     fn handle_event (&mut self, _event: &glium::glutin::Event, _game_state: &mut GameLoopState) {}
-    fn on_begin_frame (&mut self) {}
-    fn on_end_frame (&mut self) {}
-    fn teardown (&mut self) {
+    fn on_begin_frame (&mut self, _game_state: &mut GameLoopState) {}
+    fn on_end_frame (&mut self, _game_state: &mut GameLoopState) {}
+    fn teardown (&mut self, _game_state: &mut GameLoopState) {
         println!("terminating...");
     }
 }

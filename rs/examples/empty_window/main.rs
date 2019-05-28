@@ -11,9 +11,9 @@ impl GameDelegate for EmptyWindow {
     fn handle_event (&mut self, event: &glium::glutin::Event, _game_state: &mut GameLoopState) {
         println!("Got event {:?}", event);
     }
-    fn on_begin_frame (&mut self) {}
-    fn on_end_frame (&mut self) {}
-    fn teardown (&mut self) {
+    fn on_begin_frame (&mut self, _game_state: &mut GameLoopState) {}
+    fn on_end_frame (&mut self, _game_state: &mut GameLoopState) {}
+    fn teardown (&mut self, _game_state: &mut GameLoopState) {
         println!("terminating...");
     }
 }
