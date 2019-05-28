@@ -39,8 +39,17 @@ impl GameDelegate for PongGame {
         let player1= PlayerInputState::new(PlayerKeyBindings::Arrows);
         let player2 = PlayerInputState::new(PlayerKeyBindings::WASD);
         let white = vec3(1.0, 1.0, 1.0);
-        let ball = ball::make_ball(entities, vec2(0.0, 0.0), vec2(-0.8, 0.2),
-                                   vec2(0.85, 0.85), white, 0.08);
+//        let ball = ball::make_ball(entities, vec2(0.0, 0.0), vec2(-0.8, 0.2),
+//                                   1.0, vec2(0.85, 0.85),
+//                                   white, 0.08);
+
+        let n : i32 = 10_000;
+        for i in 0 .. n {
+            ball::make_ball(entities, vec2(0.0, 0.0),
+                            vec2(i as f32 / n as f32 * 2.0 - 1.0, 0.2).normalize_to(1.0),
+                            10.0, vec2(0.85, 0.85),
+                            white, 0.08);
+        }
 //        let player2 = PlayerInputState::new(PlayerKeyBindings::None);
         let input = MultiplayerInput { player1, player2 };
         entities.add_resource(input);

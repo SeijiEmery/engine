@@ -15,20 +15,21 @@ pub fn register_systems (systems: &mut DispatcherBuilder) {
     systems.add(BallPhysicsSystem{}, "ball paddle collision", &[]);
 //    systems.add(PongPhysicsSystem{}, "pong physics system", &[]);
 }
-pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, bounds: Vec2, color: Vec3, size: f32) -> Entity {
+pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, acceleration_per_minute: f32, bounds: Vec2, color: Vec3, size: f32) -> Entity {
     let enable_movement = true;
     let radius = size * 0.5;
+    let acceleration_rate = acceleration_per_minute / 60.0;
     entities.create_entity()
-        .with(BallComponent { velocity, bounds, pos, radius, enable_movement })
+        .with(BallComponent { velocity, acceleration_rate, bounds, pos, radius, enable_movement })
         .with(TransformComponent { pos: vec3(pos.x, pos.y, 1.0), scale: vec2(size, size), rot: Rad(0.0) })
         .with(ShapeComponent::Circle(CircleShape{ r: radius }))
-        .with(ShapeRendererComponent { visible: true, outline: None })
+//        .with(ShapeRendererComponent { visible: true, outline: None })
         .with(MaterialComponent { color: Color { r: color.x, g: color.y, b: color.z, a: 1.0 } })
         .build()
 }
 
 #[derive(Debug)]
-pub struct BallComponent { velocity: Vec2, bounds: Vec2, pos: Vec2, radius: f32, enable_movement: bool }
+pub struct BallComponent { velocity: Vec2, bounds: Vec2, pos: Vec2, radius: f32, acceleration_rate: f32, enable_movement: bool }
 impl Component for BallComponent { type Storage = VecStorage<BallComponent>; }
 
 #[derive(Debug)]
@@ -77,7 +78,6 @@ impl<'a> System<'a> for BallPhysicsSystem {
         let time = &*time;
         let aspect_ratio = (&*aspect_ratio).0;
         for mut ball in (&mut balls).join() {
-
             // update ball position
             let starting_pos = ball.pos;
             if ball.enable_movement {
@@ -130,6 +130,8 @@ impl<'a> System<'a> for BallPhysicsSystem {
             if changed_velocity {
                 ball.pos = starting_pos + ball.velocity * time.dt as f32;
             }
+            // update velocity (speedup ball...)
+            ball.velocity += ball.velocity * ball.acceleration_rate * (time.dt as f32);
         }
         for (ball, mut transform) in (&balls, &mut transforms).join() {
             transform.pos.x = ball.pos.x;
