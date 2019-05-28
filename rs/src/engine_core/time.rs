@@ -1,7 +1,7 @@
 use std::{time};
 use spin_sleep;
 
-const TARGET_FRAMERATE : f64 = 60.0;
+const TARGET_FRAMERATE : f64 = 100.0;
 const FRAMERATE_DYNAMIC_TARGET_SWITCHING_RATE : f64 = 0.9;
 const FRAMERATE_OVERSHOOT_FACTOR : f64 = 1.03;
 //const TARGET_FRAMERATE : f64 = 100.0;

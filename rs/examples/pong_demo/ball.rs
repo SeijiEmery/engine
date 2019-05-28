@@ -23,7 +23,7 @@ pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, acceleration_
         .with(BallComponent { velocity, acceleration_rate, bounds, pos, radius, enable_movement })
         .with(TransformComponent { pos: vec3(pos.x, pos.y, 1.0), scale: vec2(size, size), rot: Rad(0.0) })
         .with(ShapeComponent::Circle(CircleShape{ r: radius }))
-//        .with(ShapeRendererComponent { visible: true, outline: None })
+        .with(ShapeRendererComponent { visible: true, outline: None })
         .with(MaterialComponent { color: Color { r: color.x, g: color.y, b: color.z, a: 1.0 } })
         .build()
 }
