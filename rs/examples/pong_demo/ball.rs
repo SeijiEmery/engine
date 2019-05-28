@@ -15,11 +15,12 @@ pub fn register_systems (systems: &mut DispatcherBuilder) {
     systems.add(BallPhysicsSystem{}, "ball paddle collision", &[]);
 //    systems.add(PongPhysicsSystem{}, "pong physics system", &[]);
 }
-pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, bounds: Vec2, color: Vec3, radius: f32) -> Entity {
+pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, bounds: Vec2, color: Vec3, size: f32) -> Entity {
     let enable_movement = false;
+    let radius = size * 0.5;
     entities.create_entity()
         .with(BallComponent { velocity, bounds, pos, radius, enable_movement })
-        .with(TransformComponent { pos: vec3(pos.x, pos.y, 1.0), scale: vec2(radius, radius), rot: Rad(0.0) })
+        .with(TransformComponent { pos: vec3(pos.x, pos.y, 1.0), scale: vec2(size, size), rot: Rad(0.0) })
         .with(ShapeComponent::Circle(CircleShape{ r: radius }))
         .with(ShapeRendererComponent { visible: true, outline: None })
         .with(MaterialComponent { color: Color { r: color.x, g: color.y, b: color.z, a: 1.0 } })
@@ -69,11 +70,23 @@ impl<'a> System<'a> for BallPhysicsSystem {
 
             // resolve ball / paddle collisions
             for (paddle, box_transform, mut paddle_material) in (&paddles, &transforms, &mut materials).join() {
-                let box_size = box_transform.scale * 0.5;
-                let bcs = vec2(box_transform.pos.x, box_transform.pos.y) - ball.pos; // box in circle coords
+                let mut box_size = box_transform.scale * 0.5;
+                let box_pos = vec2(box_transform.pos.x, box_transform.pos.y);
 
-                paddle_material.color = Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
-                if bcs.x.abs() - box_size.x < 0.0 && bcs.y.abs() - box_size.x < 0.0 {
+                let cbs = ball.pos - box_pos; // translate box into circle coords
+                let cbs_abs = vec2(cbs.x.abs(), cbs.y.abs()); // abs => 1st quadrant
+
+                // collision tests:
+                if ( // 1. circle overlaps with any corner?
+                    cbs_abs - box_size).magnitude() <= ball.radius
+                    // 2. circle penetrates any edge along one axis AND circle center is completely
+                    // within box on other axis. Need BOTH of these tests to work properly.
+                    // Note: if we just did (cbs_abs - box_size).x < radius && (...).y < radius
+                    // that -would- replace all of these tests BUT would give us box / box intersection,
+                    // not box / circle intersection
+                    || (cbs_abs.x < box_size.x + ball.radius && cbs_abs.y < box_size.y)
+                    || (cbs_abs.y < box_size.y + ball.radius && cbs_abs.x < box_size.x)
+                {
                     paddle_material.color = Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
                     if (ball.velocity.y < 0.0) == (box_transform.pos.y < 0.0) {
                         let ball_speed = ball.velocity.magnitude();
@@ -81,6 +94,8 @@ impl<'a> System<'a> for BallPhysicsSystem {
                         let up: f32 = if ball.velocity.y < 0.0 { 1.0 } else { -1.0 };
                         ball.velocity = vec2(hit_pos_normalized, up).normalize_to(ball_speed);
                     }
+                } else {
+                    paddle_material.color = Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
                 }
             }
             // update ball position
