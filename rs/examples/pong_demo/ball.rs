@@ -16,7 +16,7 @@ pub fn register_systems (systems: &mut DispatcherBuilder) {
 //    systems.add(PongPhysicsSystem{}, "pong physics system", &[]);
 }
 pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, bounds: Vec2, color: Vec3, size: f32) -> Entity {
-    let enable_movement = false;
+    let enable_movement = true;
     let radius = size * 0.5;
     entities.create_entity()
         .with(BallComponent { velocity, bounds, pos, radius, enable_movement })
@@ -47,7 +47,9 @@ impl<'a> System<'a> for DebugMakeBallFollowCursorSystem {
     fn run (&mut self, (target, mut balls): Self::SystemData) {
         let target = &*target;
         for mut ball in (&mut balls).join() {
-            ball.pos = target.pos;
+            if !ball.enable_movement {
+                ball.pos = target.pos;
+            }
         }
     }
 }
