@@ -11,12 +11,14 @@ pub fn register_entities (entities: &mut World) {
     entities.register::<PaddleComponent>();
 }
 pub fn register_systems (systems: &mut DispatcherBuilder) {
+    systems.add(DebugMakeBallFollowCursorSystem{}, "ball debug", &[]);
     systems.add(BallPhysicsSystem{}, "ball paddle collision", &[]);
 //    systems.add(PongPhysicsSystem{}, "pong physics system", &[]);
 }
 pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, bounds: Vec2, color: Vec3, radius: f32) -> Entity {
+    let enable_movement = false;
     entities.create_entity()
-        .with(BallComponent { velocity, bounds, pos, radius })
+        .with(BallComponent { velocity, bounds, pos, radius, enable_movement })
         .with(TransformComponent { pos: vec3(pos.x, pos.y, 1.0), scale: vec2(radius, radius), rot: Rad(0.0) })
         .with(ShapeComponent::Circle(CircleShape{ r: radius }))
         .with(ShapeRendererComponent { visible: true, outline: None })
@@ -25,12 +27,29 @@ pub fn make_ball (entities: &mut World, pos: Vec2, velocity: Vec2, bounds: Vec2,
 }
 
 #[derive(Debug)]
-pub struct BallComponent { velocity: Vec2, bounds: Vec2, pos: Vec2, radius: f32 }
+pub struct BallComponent { velocity: Vec2, bounds: Vec2, pos: Vec2, radius: f32, enable_movement: bool }
 impl Component for BallComponent { type Storage = VecStorage<BallComponent>; }
 
 #[derive(Debug)]
 pub struct PaddleComponent {}
 impl Component for PaddleComponent { type Storage = VecStorage<PaddleComponent>; }
+
+#[derive(Debug)]
+pub struct CursorTarget { pub pos: Vec2 }
+impl Default for CursorTarget { fn default() -> CursorTarget { CursorTarget { pos: vec2(0.0, 0.0) } }}
+pub struct DebugMakeBallFollowCursorSystem {}
+impl<'a> System<'a> for DebugMakeBallFollowCursorSystem {
+    type SystemData = (
+        Read<'a, CursorTarget>,
+        WriteStorage<'a, BallComponent>,
+    );
+    fn run (&mut self, (target, mut balls): Self::SystemData) {
+        let target = &*target;
+        for mut ball in (&mut balls).join() {
+            ball.pos = target.pos;
+        }
+    }
+}
 
 struct BallPhysicsSystem {}
 impl<'a> System<'a> for BallPhysicsSystem {
@@ -50,21 +69,24 @@ impl<'a> System<'a> for BallPhysicsSystem {
 
             // resolve ball / paddle collisions
             for (paddle, box_transform, mut paddle_material) in (&paddles, &transforms, &mut materials).join() {
-                let box_size = box_transform.scale;
+                let box_size = box_transform.scale * 0.5;
                 let bcs = vec2(box_transform.pos.x, box_transform.pos.y) - ball.pos; // box in circle coords
 
                 paddle_material.color = Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
-                if bcs.x.abs() - box_size.x < 0.0 && bcs.y.abs() - box_size.x < 0.0
-                    && (ball.velocity.y < 0.0) == (box_transform.pos.y < 0.0) {
+                if bcs.x.abs() - box_size.x < 0.0 && bcs.y.abs() - box_size.x < 0.0 {
                     paddle_material.color = Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
-                    let ball_speed = ball.velocity.magnitude();
-                    let hit_pos_normalized = (ball.pos.x - box_transform.pos.x) / box_transform.scale.x;
-                    let up : f32 = if ball.velocity.y <= 0.0 { 1.0 } else { -1.0 };
-                    ball.velocity = vec2(hit_pos_normalized, up).normalize_to(ball_speed);
+                    if (ball.velocity.y < 0.0) == (box_transform.pos.y < 0.0) {
+                        let ball_speed = ball.velocity.magnitude();
+                        let hit_pos_normalized = (ball.pos.x - box_transform.pos.x) / box_transform.scale.x;
+                        let up: f32 = if ball.velocity.y < 0.0 { 1.0 } else { -1.0 };
+                        ball.velocity = vec2(hit_pos_normalized, up).normalize_to(ball_speed);
+                    }
                 }
             }
             // update ball position
-            ball.pos += ball.velocity * time.dt as f32;
+            if ball.enable_movement {
+                ball.pos += ball.velocity * time.dt as f32;
+            }
         }
         for (ball, mut transform) in (&balls, &mut transforms).join() {
             transform.pos.x = ball.pos.x;

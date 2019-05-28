@@ -19,7 +19,8 @@ use glium::index::IndicesSource::MultidrawArray;
 struct PongGame {
     player1: Option<specs::Entity>,
     player2: Option<specs::Entity>,
-    ball: Option<specs::Entity>
+    ball: Option<specs::Entity>,
+    window_width: f32, window_height: f32,
 }
 impl GameDelegate for PongGame {
     fn register_components (&mut self, entities: &mut specs::World) {
@@ -42,6 +43,7 @@ impl GameDelegate for PongGame {
 //        let player2 = PlayerInputState::new(PlayerKeyBindings::None);
         let input = MultiplayerInput { player1, player2 };
         entities.add_resource(input);
+        entities.add_resource(ball::CursorTarget{ pos: vec2(0.0, 0.0)});
     }
     fn register_systems (&mut self, systems: &mut specs::DispatcherBuilder, renderer: &mut RendererBackend) {
         player::register_systems(systems);
@@ -51,6 +53,30 @@ impl GameDelegate for PongGame {
     fn handle_event (&mut self, event: &glium::glutin::Event, state: &mut GameLoopState) {
         let input = &mut *state.ecs.write_resource::<MultiplayerInput>();
         input.on_event(event);
+        match event {
+            glium::glutin::Event::WindowEvent {
+                event: glutin::WindowEvent::Resized(size), ..
+            } => {
+                self.window_width = size.width as f32;
+                self.window_height = size.height as f32;
+            },
+            glium::glutin::Event::WindowEvent {
+                event: glutin::WindowEvent::CursorMoved {
+                    position, ..
+                }, ..
+            } => {
+                let target = &mut *state.ecs.write_resource::<ball::CursorTarget>();
+                target.pos = vec2(
+                    position.x as f32 / self.window_width,
+                    position.y as f32 / self.window_height);
+
+                target.pos *= 2.0;
+                target.pos.x -= 1.0;
+                target.pos.y = 1.0 - target.pos.y;
+
+                println!("mouse: {:?} => {:?}", position, target.pos);
+            }, _ => ()
+        }
     }
     fn on_begin_frame (&mut self, state: &mut GameLoopState) {
         let input = &mut *state.ecs.write_resource::<MultiplayerInput>();
