@@ -1,5 +1,5 @@
 {
-	"name": "engine-d",
+	"name": "engine",
 	"authors": [
 		"Seiji Emery"
 	],
@@ -12,5 +12,14 @@
 	},
 	"description": "a small / toy 2d game engine",
 	"copyright": "Copyright © 2019, Seiji Emery",
-	"license": "MIT"
+	"license": "MIT",
+	"subPackages": [
+		{
+			"name": "empty-window",
+			"targetType": "executable",
+			"sourcePaths": ["examples/empty_window"],
+			"importPaths": ["examples/empty_window", "src"],
+			"targetPath": "build"
+		}
+	]
 }
