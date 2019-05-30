@@ -2,6 +2,8 @@ module engine.renderer.renderer;
 public import engine.utils.math;
 import std.variant: Algebraic;
 
+struct RendererParams {}
+
 // Mock renderer:
 // - any renderer implements this interface (beginFrame() / endFrame() / draw())
 // - checks that the renderer's API is being used correctly
@@ -13,6 +15,8 @@ struct MockRenderer {
     public bool debugDrawCalls = false;
     public RenderItem[] drawcalls;
     private bool rendererActive = false;
+
+    this (RendererParams params) {}
 
     // called at the beginning of a frame
     void beginFrame () { 
