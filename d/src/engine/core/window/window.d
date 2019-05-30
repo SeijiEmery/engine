@@ -1,15 +1,15 @@
 module engine.core.window.window;
 import engine.core.window.context: WindowContextVersion, configureWindowContextVersionHints;
 import engine.utils.math;
+import engine.utils.maybe: Maybe;
 import std.exception: enforce;
 import std.stdio: writefln;
 import std.string: toStringz;
 import derelict.glfw3.glfw3;
 
-
 struct WindowBuilder {
-    vec2i   size  = vec2i(800, 600);
-    string  title = "";
+    Maybe!vec2i     size;
+    Maybe!string    title;
     WindowContextVersion contextVersion = WindowContextVersion.OpenGL_41;
 }
 
@@ -20,9 +20,15 @@ struct Window {
     this (WindowBuilder builder) {
         writefln("Creating window");
         builder.contextVersion.configureWindowContextVersionHints();
+
+        auto size  = builder.size.withDefault(vec2i(-1, -1));
+        auto title = builder.title.withDefault("");
+
+        auto x = builder.size.map((vec2i pos) => pos.x).withDefault(800);
+        builder.size.map((vec2i pos) { writefln("%s", pos); });
+
         auto window = this.m_window = glfwCreateWindow(
-            builder.size.x, builder.size.y,
-            builder.title.toStringz,
+            size.x, size.y, title.toStringz,
             glfwGetPrimaryMonitor(),
             null);
         enforce(window, "Failed to create glfw window!");
