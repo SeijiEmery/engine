@@ -24,7 +24,7 @@ public struct VertexArray {
         }
         return this;
     }
-    void bindVertexAttrib (VertexBuffer vbo, uint index, int count, GLType type, GLNormalized normalized, size_t stride, size_t offset) {
+    void bindVertexAttrib (ref VertexBuffer vbo, uint index, int count, GLType type, GLNormalized normalized, size_t stride, size_t offset) {
         if (bind() && vbo.bind()) {
             gl.EnableVertexAttribArray(index);
             gl.VertexAttribPointer(index, count, type, normalized, cast(int)stride, cast(void*)offset);
