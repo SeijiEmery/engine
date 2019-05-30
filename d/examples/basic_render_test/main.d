@@ -1,12 +1,12 @@
-import engine: runGame, WindowEvent;
+import engine: runGame, WindowEvent, EntityManager, SystemManager;
 import engine.renderer;
 import engine.utils.math;
 import engine.utils.color;
 import std.stdio;
 
 struct BasicRenderTest {
-    void registerComponents () {}
-    void registerSystems () {}
+    void registerComponents (ref EntityManager) {}
+    void registerSystems (ref SystemManager) {}
     void handleEvent (WindowEvent event) {}
     void render (Renderer)(ref Renderer renderer) {
         renderer.draw(renderBox(mat4.identity, color("#ff0000")));

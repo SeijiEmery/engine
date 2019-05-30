@@ -5,8 +5,10 @@ import std.exception: enforce;
 import engine.core.window: Window, WindowBuilder;
 import engine.core.window.context: WindowContextVersion;
 import engine.utils.color;
+import engine.utils.time;
 import engine.renderer;
 import std.stdio: writefln;
+public import star.entity;
 
 public mixin template runGame (GameDelegate) {
     void main (string[] args) {
@@ -46,14 +48,14 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
         import engine.renderer.opengl_backend: Renderer;
         auto renderer = Renderer(RendererParams());
         //auto renderer = createRenderer!(RendererBackend.OpenGL);
-        writefln("ok...");
         //auto renderer = createRenderer!(RendererBackend.MockRenderer);
         //auto renderer = createRenderer!(RendererBackend.MockDebugRenderer);
 
         // setup...
         writefln("registering ecs components + systems...");
-        dg.registerComponents();
-        dg.registerSystems();
+        auto ecs = new star.entity.Engine();
+        dg.registerComponents(ecs.entities);
+        dg.registerSystems(ecs.systems);
 
         // run game with window...
         writefln("starting main loop...");
@@ -63,6 +65,8 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
                 dg.handleEvent(event);
             }
             renderer.beginFrame();
+
+            // run systems...
 
             // draw stuff...
             dg.render(renderer);
