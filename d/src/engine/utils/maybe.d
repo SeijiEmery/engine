@@ -36,8 +36,10 @@ struct Maybe (T) {
     }
 
     // Safely get value OR an optional default value
+    // note: defaultValue is lazy, ie. its expression will not even be -evaluated-
+    // until / iff it is needed (this is a very useful property for eg. WindowBuilder)
     static if (!(is(T == void))) {
-        T withDefault (T defaultValue) {
+        T withDefault (lazy T defaultValue) {
             if (isSome) return *value.peek!T;
             return defaultValue;
         }
@@ -118,5 +120,12 @@ unittest {
     assert(nothing!int() == nothing!string());
     assert(nothing!int() == nothing());
     assert(just(10) != just("10"));
+
+    // test laziness of .withDefault:
+    bool called = false;
+    int f () { called = true; return 11; }
+
+    assert(called == false && just(10).withDefault(f()) == 10 && called == false);
+    assert(called == false && nothing!int().withDefault(f()) == 11 && called == true);
 }
 
