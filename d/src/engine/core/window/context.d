@@ -25,27 +25,27 @@ void configureWindowContextVersionHints (WindowContextVersion contextVersion) {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-            //glfwWindowHint(GLFW_FORWARD_COMPAT, false);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, false);
         } break;
         case WindowContextVersion.OpenGL_32: {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-            //glfwWindowHint(GLFW_FORWARD_COMPAT, false);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, false);
         } break;
         case WindowContextVersion.OpenGL_41: {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-            //glfwWindowHint(GLFW_FORWARD_COMPAT, true);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
         } break;
         case WindowContextVersion.OpenGL_45: {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-            //glfwWindowHint(GLFW_FORWARD_COMPAT, true);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, true);
         } break;
         case WindowContextVersion.OpenGL_ES_20: {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
