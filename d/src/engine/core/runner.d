@@ -38,6 +38,8 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
         wb.contextVersion = WindowContextVersion.OpenGL_41;
         auto window = Window(wb);
         auto renderer = createRenderer!(RendererBackend.OpenGL);
+        //auto renderer = createRenderer!(RendererBackend.MockRenderer);
+        //auto renderer = createRenderer!(RendererBackend.MockDebugRenderer);
 
         // setup...
         dg.registerComponents();
@@ -52,6 +54,7 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
             renderer.beginFrame();
 
             // draw stuff...
+            renderer.draw(renderBox(mat4.identity, vec4(1, 0, 0, 1)));
 
             renderer.endFrame();
             dg.onEndFrame();

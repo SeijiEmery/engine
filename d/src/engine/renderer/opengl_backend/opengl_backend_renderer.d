@@ -4,9 +4,9 @@ public import engine.renderer.renderer;
 struct Renderer {
     private RenderItem[] items;
 
-    void render (RenderItem item) { items ~= item; }
+    void draw (RenderItem item) { items ~= item; }
     void beginFrame () { items.length = 0; }
     void endFrame   () {
-        
+
     }
 }
