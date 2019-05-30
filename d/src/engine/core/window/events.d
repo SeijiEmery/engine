@@ -105,7 +105,7 @@ struct WindowEventProcessor {
         WindowEvent event = ev;
         this.eventBuffer ~= event;
     }
-    public auto events () {
+    public auto processEvents () {
         // clear events, textBuffer...
         eventBuffer.length = 0;
         textBuffer.length = 0;

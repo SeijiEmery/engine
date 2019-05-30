@@ -55,8 +55,8 @@ public:
     void swapBuffers () {
         m_window.glfwSwapBuffers();
     }
-    const(WindowEvent[]) events () { 
-        return eventProcessor.events;
+    const(WindowEvent[]) processEvents () { 
+        return eventProcessor.processEvents;
     }
 }
 

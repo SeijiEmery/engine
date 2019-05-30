@@ -35,7 +35,7 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
         // run game with window...
         while (!window.shouldClose) {
             dg.onBeginFrame();
-            foreach (event; window.events) {
+            foreach (event; window.processEvents) {
                 dg.handleEvent(event);
             }
             dg.onEndFrame();
