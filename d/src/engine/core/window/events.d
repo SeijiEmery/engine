@@ -12,7 +12,7 @@ enum PressState { PRESSED, RELEASED, REPEAT, UNKNOWN };
 bool pressed  (PressState state) { return state == PressState.PRESSED; }
 bool released (PressState state) { return state == PressState.RELEASED; }
 bool repeated (PressState state) { return state == PressState.REPEAT; }
-private PressState pressStateFromGlfw (int state) {
+private PressState pressStateFromGlfw (int state) pure nothrow {
     switch (state) {
         case GLFW_PRESS: return PressState.PRESSED;
         case GLFW_RELEASE: return PressState.RELEASED;
@@ -51,7 +51,17 @@ struct WindowEventProcessor {
     this (GLFWwindow* window) {
         // set window user pointer to this event processor
         // (which should NOT be moved in memory, period...)
-        glfwSetWindowUserPointer(window, cast(void*)&this);
+        window.glfwSetWindowUserPointer(cast(void*)&this);
+
+        // get current window size, framebuffer size, mouse position
+        int wx, wy, fx, fy; double mx, my;
+        window.glfwGetWindowSize(&wx, &wy);
+        window.glfwGetFramebufferSize(&fx, &fy);
+        window.glfwGetCursorPos(&mx, &my);
+
+        this.windowSize = vec2i(wx, wy);
+        this.windowFramebufferSize = vec2i(fx, fy);
+        this.mousePos = vec2d(mx, my);
 
         // setup event handlers...
         glfwWindowCallback!("WindowClose", function (WindowEventProcessor* cb) {
@@ -87,7 +97,7 @@ struct WindowEventProcessor {
             cb.pushEvent(MouseMoved(pos, cb.mousePos - pos));
             cb.mousePos = pos;
         })(window);
-        glfwWindowCallback!("CursorPos", function (WindowEventProcessor* cb, double x, double y) {
+        glfwWindowCallback!("Scroll", function (WindowEventProcessor* cb, double x, double y) {
             cb.pushEvent(MouseScrolled(vec2d(x, y)));
         })(window);
     }

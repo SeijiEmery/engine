@@ -17,7 +17,7 @@ struct WindowBuilder {
 
 struct Window {
     private GLFWwindow* m_window;
-    private WindowEvent[] m_events;
+    private WindowEventProcessor eventProcessor;
     alias m_window this;
 public:
     this (WindowBuilder builder) {
@@ -33,9 +33,9 @@ public:
             builder.fullscreen ? glfwGetPrimaryMonitor() : null,
             null);
         enforce(window, "Failed to create glfw window!");
-        glfwSetWindowUserPointer(window, cast(void*)this);
 
-        // register event hooks...
+        // register event hooks through the event processor...
+        this.eventProcessor = WindowEventProcessor(window);
     }
     ~this () {
         writefln("Closing window");
@@ -55,10 +55,8 @@ public:
     void swapBuffers () {
         m_window.glfwSwapBuffers();
     }
-    auto events () {
-        m_events.length = 0;
-        glfwPollEvents();
-        return cast(const WindowEvent[])m_events;
+    const(WindowEvent[]) events () { 
+        return eventProcessor.events;
     }
 }
 

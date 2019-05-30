@@ -5,7 +5,7 @@ struct EmptyWindow {
     void registerComponents () {}
     void registerSystems () {}
     void handleEvent (WindowEvent event) {
-        writefln("Got event %s!", event);
+        writefln("Got event %s", event);
     }
     void onBeginFrame () {}
     void onEndFrame () {}
