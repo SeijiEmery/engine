@@ -55,6 +55,11 @@ public:
     void swapBuffers () {
         m_window.glfwSwapBuffers();
     }
+    void makeContextCurrent () {
+        import derelict.opengl3.gl3;
+        m_window.glfwMakeContextCurrent();
+        DerelictGL3.reload();
+    }
     const(WindowEvent[]) processEvents () { 
         return eventProcessor.processEvents;
     }

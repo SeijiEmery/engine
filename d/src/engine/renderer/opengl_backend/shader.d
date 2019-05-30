@@ -46,30 +46,7 @@ struct ShaderBuilder {
 }
 struct Shader {    
     this (ShaderBuilder builder) {
-        loadSource(builder);
-    }
-    void loadSource (ShaderBuilder builder) {
-        try {
-            m_program.createProgram();
-            setStatus(ShaderStatus.PendingRecompile);
-            loadProgramFromSource(this, m_program, builder.shaders);
-            enforce(bind());
-            loadUniforms();
-            m_error = null;
-            setStatus(ShaderStatus.Ready);
-            return this;
-        } catch (ShaderCompilationException exception) {
-            m_error = exception;
-            setStatus(ShaderStatus.CompileError);
-        } catch (ShaderLinkException exception) {
-            m_error = exception;
-            setStatus(ShaderStatus.LinkError);
-        } catch (ShaderValidationException exception) {
-            m_error = exception;
-            setStatus(ShaderStatus.ValidateError);
-        } finally {
-            writefln("Finished loadShader: %s", this);
-        }
+        loadSource(builder.shaders);
     }
 
     /* Get shader program (may return zero). To not return zero, call bind() first. */
@@ -124,14 +101,16 @@ struct Shader {
     private static uint[] g_tempArray1;
 
     /* Load shader from shader sources */
-    public Shader loadSource (const(string[ShaderType]) sources, ref uint[] tempArray = g_tempArray1) {
+    public void loadSource (Maybe!string[ShaderType] sources, ref uint[] tempArray = g_tempArray1) {
         import std.stdio: writefln;
         writefln("Loading %s with sources", this);
         foreach (type, source; sources) {
             import std.algorithm: map;
             import std.string: lineSplitter, stripLeft;
             import std.array: join;
-            writefln("\t%s:\n\t\t%s", type, source.lineSplitter.join("\n\t\t"));
+            if (source.isSome) {
+                writefln("\t%s:\n\t\t%s", type, source.unwrap.lineSplitter.join("\n\t\t"));
+            }
         }
 
         try {
@@ -142,22 +121,20 @@ struct Shader {
             loadUniforms();
             m_error = null;
             setStatus(ShaderStatus.Ready);
-            return this;
         } catch (ShaderCompilationException exception) {
             m_error = exception;
             setStatus(ShaderStatus.CompileError);
         } catch (ShaderLinkException exception) {
             m_error = exception;
             setStatus(ShaderStatus.LinkError);
-        }/+ catch (ShaderValidationException exception) {
+        } catch (ShaderValidationException exception) {
             m_error = exception;
             setStatus(ShaderStatus.ValidateError);
-        }+/ finally {
+        } finally {
             writefln("Finished loadShader: %s", this);
         }
-        return this;
     }
-    public Shader loadBinary (const(ubyte[]) data) {
+    public void loadBinary (const(ubyte[]) data) {
         try {
             m_program.createProgram();
             setStatus(ShaderStatus.PendingRecompile);
@@ -172,7 +149,6 @@ struct Shader {
             import std.stdio: writefln;
             writefln("Finished loadBinary: %s", this);
         }
-        return this;
     }
     public ubyte[] readBinary (ubyte[] data) {
         enforceBound;
@@ -458,7 +434,7 @@ private void setProgramBinary (uint program, const(ubyte[]) data) {
 private void loadProgramFromSource (
     Shader shaderObject,
     ref uint program, 
-    const(string[ShaderType]) sources,
+    Maybe!string[ShaderType] sources,
     ref uint[] tempShaderList       // temp array - pass this in so we can recycle and avoid unecessary allocations
 ) {
     uint shader;
@@ -467,16 +443,18 @@ private void loadProgramFromSource (
         program.createProgram();
 
         foreach (shaderType, src; sources) {
-            shader = gl.CreateShader(cast(GLenum)shaderType);
-            shader.shaderSource(src);
+            src.map((string src) {
+                shader = gl.CreateShader(cast(GLenum)shaderType);
+                shader.shaderSource(src);
 
-            enforce(shader.compileShader(),
-                new ShaderCompilationException(
-                    shaderObject, shaderType, src, shader.getShaderInfoLog));
+                enforce(shader.compileShader(),
+                    new ShaderCompilationException(
+                        shaderObject, shaderType, src, shader.getShaderInfoLog));
 
-            gl.AttachShader(program, shader);
-            tempShaderList ~= shader;
-            shader = 0;
+                gl.AttachShader(program, shader);
+                tempShaderList ~= shader;
+                shader = 0;
+            });
         }
 
         enforce(program.linkProgram(),

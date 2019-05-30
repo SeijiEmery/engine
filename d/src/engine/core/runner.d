@@ -38,6 +38,8 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
         auto wb = WindowBuilder();
         wb.contextVersion = WindowContextVersion.OpenGL_41;
         auto window = Window(wb);
+        window.makeContextCurrent();
+
         auto renderer = createRenderer!(RendererBackend.OpenGL);
         //auto renderer = createRenderer!(RendererBackend.MockRenderer);
         //auto renderer = createRenderer!(RendererBackend.MockDebugRenderer);
