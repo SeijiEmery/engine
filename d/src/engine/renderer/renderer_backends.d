@@ -13,7 +13,7 @@ auto createRenderer (RendererBackend backend)(RendererParams params = RendererPa
         return refCounted(MockRenderer(params));
     } else if (backend == RendererBackend.MockDebugRenderer) {
         import engine.renderer.renderer: MockRenderer;
-        auto renderer = refCounted(MockRenderer(params));
+        auto renderer = refCounted(move(MockRenderer(params)));
         renderer.debugDrawCalls = true;
         return renderer;
     }

@@ -1,6 +1,7 @@
 module engine.renderer.opengl_backend.opengl_backend_renderer;
 import engine.renderer.opengl_backend.vertex_buffer;
 import engine.renderer.opengl_backend.shader;
+import engine.renderer.opengl_backend.enums;
 import engine.renderer.renderer;
 import std.variant;
 import std.stdio: writefln;
@@ -24,13 +25,15 @@ struct Renderer {
 }
 struct RendererImpl {
     Shader       shader;
-    //VertexBuffer vbo;
+    VertexBuffer vbo;
 
     this (RendererParams params) {
         this.shader = ShaderBuilder()
             .withFragment(FRAGMENT_SHADER)
             .withVertex(VERTEX_SHADER)
             .build();
+
+        //this.vbo.bufferData(QUAD_GEOMETRY, GLBufferUsage.GL_STATIC_DRAW);
     }
     void drawShape (string shader_subroutine, mat4 transform, vec4 color, float outline, bool transparent) {
         shader.setSubroutine("draw_primitive", shader_subroutine);

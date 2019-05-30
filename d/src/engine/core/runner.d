@@ -43,7 +43,10 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
         window.makeContextCurrent();
 
         writefln("setting up renderer...");
-        auto renderer = createRenderer!(RendererBackend.OpenGL);
+        import engine.renderer.opengl_backend: Renderer;
+        auto renderer = Renderer(RendererParams());
+        //auto renderer = createRenderer!(RendererBackend.OpenGL);
+        writefln("ok...");
         //auto renderer = createRenderer!(RendererBackend.MockRenderer);
         //auto renderer = createRenderer!(RendererBackend.MockDebugRenderer);
 
