@@ -23,6 +23,16 @@
 				"engine": { "path": "." }
 			},
 			"targetPath": "build"
+		},
+		{
+			"name": "basic-render-test",
+			"targetType": "executable",
+			"sourcePaths": ["examples/basic_render_test"],
+			"importPaths": ["examples/basic_render_test", "src"],
+			"dependencies": {
+				"engine": { "path": "." }
+			},
+			"targetPath": "build"
 		}
 	]
 }

@@ -7,6 +7,7 @@ struct EmptyWindow {
     void handleEvent (WindowEvent event) {
         writefln("Got event %s", event);
     }
+    void render (Renderer)(ref Renderer renderer) {}
     void onBeginFrame () {}
     void onEndFrame () {}
     void teardown () {

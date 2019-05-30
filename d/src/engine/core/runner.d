@@ -65,7 +65,7 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
             renderer.beginFrame();
 
             // draw stuff...
-            renderer.draw(renderBox(mat4.identity, color("#ff0000")));
+            dg.render(renderer);
 
             renderer.endFrame();
             dg.onEndFrame();
