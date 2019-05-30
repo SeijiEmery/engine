@@ -6,6 +6,7 @@ import engine.core.window: Window, WindowBuilder;
 import engine.core.window.context: WindowContextVersion;
 import engine.utils.color;
 import engine.renderer;
+import std.stdio: writefln;
 
 public mixin template runGame (GameDelegate) {
     void main (string[] args) {
@@ -30,6 +31,7 @@ extern(C) nothrow void glfwPrintError(int error, const(char)* description) {
 
 public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
     try {
+        writefln("initializing glfw + opengl...");
         DerelictGL3.load();
         DerelictGLFW3.load();
         glfwSetErrorCallback(&glfwPrintError);
@@ -40,15 +42,18 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
         auto window = Window(wb);
         window.makeContextCurrent();
 
+        writefln("setting up renderer...");
         auto renderer = createRenderer!(RendererBackend.OpenGL);
         //auto renderer = createRenderer!(RendererBackend.MockRenderer);
         //auto renderer = createRenderer!(RendererBackend.MockDebugRenderer);
 
         // setup...
+        writefln("registering ecs components + systems...");
         dg.registerComponents();
         dg.registerSystems();
 
         // run game with window...
+        writefln("starting main loop...");
         while (!window.shouldClose) {
             dg.onBeginFrame();
             foreach (event; window.processEvents) {
@@ -63,7 +68,10 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
             dg.onEndFrame();
             window.swapBuffers();
         }
+    } catch (Exception e) {
+        writefln("Terminated with %s", e);
     } finally {
+        writefln("main loop terminated, shutting down...");
         glfwTerminate();
     }
 }

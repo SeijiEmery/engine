@@ -3,6 +3,7 @@ import engine.renderer.opengl_backend.glutils;
 import engine.renderer.opengl_backend.enums;
 import engine.renderer.opengl_backend.context;
 import engine.renderer.opengl_backend.exceptions;
+import engine.renderer.opengl_backend.config;
 import engine.utils.maybe;
 import derelict.opengl3.gl3;
 import std.stdio: writefln;
@@ -11,11 +12,6 @@ import std.format: format;
 import std.string: toStringz, lineSplitter;
 import std.array: join;
 
-enum ShaderType { 
-    VERTEX, 
-    FRAGMENT, 
-    GEOMETRY 
-}
 enum ShaderStatus {
     Empty            = 0,
     PendingRecompile = 1,
@@ -38,10 +34,10 @@ bool empty       (ShaderStatus status) @safe { return status == ShaderStatus.Emp
 private __gshared uint g_boundProgram = 0;
 
 struct ShaderBuilder {
-    Maybe!string[ShaderType] shaders;
-    auto ref withVertex   (string vertex)   { shaders[ShaderType.VERTEX]   = just(vertex);   return this; }
-    auto ref withFragment (string fragment) { shaders[ShaderType.FRAGMENT] = just(fragment); return this; }
-    auto ref withGeometry (string geometry) { shaders[ShaderType.GEOMETRY] = just(geometry); return this; }
+    Maybe!string[GLShaderType] shaders;
+    auto ref withVertex   (string vertex)   { shaders[GLShaderType.VERTEX]   = just(vertex);   return this; }
+    auto ref withFragment (string fragment) { shaders[GLShaderType.FRAGMENT] = just(fragment); return this; }
+    auto ref withGeometry (string geometry) { shaders[GLShaderType.GEOMETRY] = just(geometry); return this; }
     Shader build () { return Shader(this); }
 }
 struct Shader {    
@@ -101,17 +97,17 @@ struct Shader {
     private static uint[] g_tempArray1;
 
     /* Load shader from shader sources */
-    public void loadSource (Maybe!string[ShaderType] sources, ref uint[] tempArray = g_tempArray1) {
+    public void loadSource (Maybe!string[GLShaderType] sources, ref uint[] tempArray = g_tempArray1) {
         import std.stdio: writefln;
-        writefln("Loading %s with sources", this);
-        foreach (type, source; sources) {
-            import std.algorithm: map;
-            import std.string: lineSplitter, stripLeft;
-            import std.array: join;
-            if (source.isSome) {
-                writefln("\t%s:\n\t\t%s", type, source.unwrap.lineSplitter.join("\n\t\t"));
-            }
-        }
+        //writefln("Loading %s with sources", this);
+        //foreach (type, source; sources) {
+        //    import std.algorithm: map;
+        //    import std.string: lineSplitter, stripLeft;
+        //    import std.array: join;
+        //    if (source.isSome) {
+        //        writefln("\t%s:\n\t\t%s", type, source.unwrap.lineSplitter.join("\n\t\t"));
+        //    }
+        //}
 
         try {
             m_program.createProgram();
@@ -131,7 +127,7 @@ struct Shader {
             m_error = exception;
             setStatus(ShaderStatus.ValidateError);
         } finally {
-            writefln("Finished loadShader: %s", this);
+            //writefln("Finished loadShader: %s", this);
         }
     }
     public void loadBinary (const(ubyte[]) data) {
@@ -185,7 +181,7 @@ struct Shader {
     }
     struct SubroutineManager {
         struct Stage {
-            ShaderType shaderType;
+            GLShaderType shaderType;
             uint[]       state;
             Uniform[]    uniforms;
 
@@ -212,7 +208,7 @@ struct Shader {
         char[]  name;
         int[]   indices;
 
-        private void loadStage (uint program, ShaderType shaderType) {
+        private void loadStage (uint program, GLShaderType shaderType) {
             import std.stdio: writefln;
 
             int numUniforms, maxlen;
@@ -259,9 +255,9 @@ struct Shader {
 
         public void loadSubroutineInfo (uint program) {
             stages.length = 0;
-            loadStage(program, ShaderType.VERTEX);
-            loadStage(program, ShaderType.FRAGMENT);
-            loadStage(program, ShaderType.GEOMETRY);
+            loadStage(program, GLShaderType.VERTEX);
+            loadStage(program, GLShaderType.FRAGMENT);
+            loadStage(program, GLShaderType.GEOMETRY);
             name.length = 0;
             indices.length = 0;
         }
@@ -434,7 +430,7 @@ private void setProgramBinary (uint program, const(ubyte[]) data) {
 private void loadProgramFromSource (
     Shader shaderObject,
     ref uint program, 
-    Maybe!string[ShaderType] sources,
+    Maybe!string[GLShaderType] sources,
     ref uint[] tempShaderList       // temp array - pass this in so we can recycle and avoid unecessary allocations
 ) {
     uint shader;
@@ -642,11 +638,11 @@ class ShaderLoadException : ShaderException {
 // Thrown by Shader.loadSource() while compiling a shader object; signals an error in
 // a particular shader's source code.
 class ShaderCompilationException : ShaderLoadException {
-    public const(ShaderType) shaderType;
+    public const(GLShaderType) shaderType;
     public const(string)       source;
     public const(string)       errorMsg;
 
-    this (Shader shader, ShaderType shaderType, string source, string error, string file = __FILE__, ulong line = __LINE__) {
+    this (Shader shader, GLShaderType shaderType, string source, string error, string file = __FILE__, ulong line = __LINE__) {
         this.shaderType = shaderType;
         this.source     = source;
         this.errorMsg   = error;

@@ -33,7 +33,10 @@ struct RendererImpl {
             .build();
     }
     void drawShape (string shader_subroutine, mat4 transform, vec4 color, float outline, bool transparent) {
-        
+        shader.setSubroutine("draw_primitive", shader_subroutine);
+        shader.setUniform("transform", transform);
+        shader.setUniform("color", color);
+        shader.setUniform("outline_width", outline);
     }
     void draw (RenderItem item) {
         item.primitive.visit!(
