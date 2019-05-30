@@ -1,5 +1,6 @@
 module engine.core.window.window;
 import engine.core.window.context: WindowContextVersion, configureWindowContextVersionHints;
+import engine.core.window.events;
 import engine.utils.math;
 import engine.utils.maybe: Maybe;
 import std.exception: enforce;
@@ -16,6 +17,7 @@ struct WindowBuilder {
 
 struct Window {
     private GLFWwindow* m_window;
+    private WindowEvent[] m_events;
     alias m_window this;
 public:
     this (WindowBuilder builder) {
@@ -53,14 +55,20 @@ public:
     void swapBuffers () {
         m_window.glfwSwapBuffers();
     }
+    auto events () {
+        m_events.length = 0;
+        glfwPollEvents();
+        return cast(const WindowEvent[])m_events;
+    }
 }
 
 // get default window resolution (for fullscreen OR windowed) if window builder hasn't specified .size
 // called lazily using wb.size.withDefault(), see withDefault() impl in engine.utils.maybe
 vec2i getDefaultWindowResolution (WindowBuilder wb) {
     auto mode = glfwGetPrimaryMonitor().glfwGetVideoMode();
-    return vec2i(mode.width, mode.height);
-    //return wb.fullscreen ?
-    //    monitorSize :
-    //    monitorSize - vec2i(50, 50);
+    auto monitorSize = vec2i(mode.width, mode.height);
+    return wb.fullscreen ?
+        monitorSize :
+        vec2i(800, 600);
+        //monitorSize - vec2i(50, 50);
 }
