@@ -42,6 +42,17 @@ struct Maybe (T) {
             return defaultValue;
         }
     }
+
+    // none() equality is transitive across type boundaries
+    // all other cases requires type and value equality
+    bool opEquals (U)(Maybe!U other) {
+        if (this.isNone && other.isNone) return true;
+        static if (is(T == U)) {
+            return this.isSome && other.isSome && this.unwrap == other.unwrap;
+        } else {
+            return false;
+        }
+    }
 }
 auto maybe (T)(T value) { return Maybe!T(value); }
 auto maybe (T)() { return Maybe!T(); }
@@ -98,5 +109,14 @@ unittest {
     assert(just(10).map((int v) => v.to!string).withDefault("") == "10");
     assert(nothing!int.map((int v) => v).withDefault(0) == 0);
     assert(nothing!int.map((int v) => v.to!string).withDefault("") == "");
+
+    // test equality
+    assert(just(10) == just(10));
+    assert(just(10) != just(12));
+    assert(just(10) != nothing!int());
+    assert(nothing!int() == nothing!int());
+    assert(nothing!int() == nothing!string());
+    assert(nothing!int() == nothing());
+    assert(just(10) != just("10"));
 }
 
