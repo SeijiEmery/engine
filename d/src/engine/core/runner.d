@@ -4,6 +4,7 @@ import derelict.opengl3.gl3;
 import std.exception: enforce;
 import engine.core.window: Window, WindowBuilder;
 import engine.core.window.context: WindowContextVersion;
+import engine.utils.color;
 import engine.renderer;
 
 public mixin template runGame (GameDelegate) {
@@ -54,7 +55,7 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
             renderer.beginFrame();
 
             // draw stuff...
-            renderer.draw(renderBox(mat4.identity, vec4(1, 0, 0, 1)));
+            renderer.draw(renderBox(mat4.identity, color("#ff0000")));
 
             renderer.endFrame();
             dg.onEndFrame();
