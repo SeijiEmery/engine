@@ -10,26 +10,25 @@ import derelict.glfw3.glfw3;
 struct WindowBuilder {
     Maybe!vec2i     size;
     Maybe!string    title;
+    bool            fullscreen = false;
     WindowContextVersion contextVersion = WindowContextVersion.OpenGL_41;
 }
 
 struct Window {
     private GLFWwindow* m_window;
     alias m_window this;
-
+public:
     this (WindowBuilder builder) {
         writefln("Creating window");
         builder.contextVersion.configureWindowContextVersionHints();
 
-        auto size  = builder.size.withDefault(vec2i(-1, -1));
+        auto size  = builder.size.withDefault(builder.getDefaultWindowResolution());
         auto title = builder.title.withDefault("");
-
-        auto x = builder.size.map((vec2i pos) => pos.x).withDefault(800);
         builder.size.map((vec2i pos) { writefln("%s", pos); });
 
         auto window = this.m_window = glfwCreateWindow(
             size.x, size.y, title.toStringz,
-            glfwGetPrimaryMonitor(),
+            builder.fullscreen ? glfwGetPrimaryMonitor() : null,
             null);
         enforce(window, "Failed to create glfw window!");
         glfwSetWindowUserPointer(window, cast(void*)this);
@@ -48,4 +47,20 @@ struct Window {
     void setTitle (string title) {
         m_window.glfwSetWindowTitle(title.toStringz);
     }
+    bool shouldClose () {
+        return m_window.glfwWindowShouldClose() != 0;
+    }
+    void swapBuffers () {
+        m_window.glfwSwapBuffers();
+    }
+}
+
+// get default window resolution (for fullscreen OR windowed) if window builder hasn't specified .size
+// called lazily using wb.size.withDefault(), see withDefault() impl in engine.utils.maybe
+vec2i getDefaultWindowResolution (WindowBuilder wb) {
+    auto mode = glfwGetPrimaryMonitor().glfwGetVideoMode();
+    return vec2i(mode.width, mode.height);
+    //return wb.fullscreen ?
+    //    monitorSize :
+    //    monitorSize - vec2i(50, 50);
 }

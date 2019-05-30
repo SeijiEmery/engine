@@ -27,6 +27,10 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
         auto wb = WindowBuilder();
         wb.contextVersion = WindowContextVersion.OpenGL_21;
         auto window = Window(wb);
+        while (!window.shouldClose) {
+            window.swapBuffers();
+            glfwPollEvents();
+        }
     } finally {
         glfwTerminate();
     }
