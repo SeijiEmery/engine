@@ -1,10 +1,14 @@
 module engine.renderer.opengl_backend.opengl_backend_renderer;
 import engine.renderer.opengl_backend.vertex_buffer;
 import engine.renderer.opengl_backend.shader;
+import engine.renderer.opengl_backend.vao;
 import engine.renderer.opengl_backend.enums;
+import engine.renderer.opengl_backend.context;
 import engine.renderer.renderer;
 import std.variant;
 import std.stdio: writefln;
+import std.exception: enforce;
+import derelict.opengl3.gl3;
 
 struct Renderer {
     private RenderItem[] items;
@@ -13,6 +17,8 @@ struct Renderer {
     this (RendererParams params) {
         this.renderer = RendererImpl(params);
     }
+    ~this () { writefln("tearing down renderer"); }
+
     void beginFrame () { items.length = 0; }
     void draw (RenderItem item) { 
         items ~= item; 
@@ -26,20 +32,30 @@ struct Renderer {
 struct RendererImpl {
     Shader       shader;
     VertexBuffer vbo;
+    VertexArray  vao;
 
     this (RendererParams params) {
         this.shader = ShaderBuilder()
             .withFragment(FRAGMENT_SHADER)
             .withVertex(VERTEX_SHADER)
             .build();
+        this.vbo.bufferData(QUAD_GEOMETRY, GLBufferUsage.GL_STATIC_DRAW);
 
-        //this.vbo.bufferData(QUAD_GEOMETRY, GLBufferUsage.GL_STATIC_DRAW);
+        this.vao.bind();
+        this.vbo.bind();
+        gl.EnableVertexAttribArray(0);
+        gl.VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, cast(int)(float.sizeof * 2), null);
+        //this.vao.bindVertexAttrib(vbo, 0, 2, GLType.GL_FLOAT, GLNormalized.FALSE, float.sizeof * 2, 0);
+        gl.BindVertexArray(0);
     }
     void drawShape (string shader_subroutine, mat4 transform, vec4 color, float outline, bool transparent) {
         shader.setSubroutine("draw_primitive", shader_subroutine);
         shader.setUniform("transform", transform);
         shader.setUniform("color", color);
         shader.setUniform("outline_width", outline);
+
+        enforce(shader.bind && vao.bind, "could not bind resources!");
+        gl.DrawArrays(GL_TRIANGLES, 0, 6);
     }
     void draw (RenderItem item) {
         item.primitive.visit!(
