@@ -43,8 +43,8 @@ vec4 toHSV (vec4 rgba) {
 
     float h;
     if (r > max(g, b))      h = fmod((g - b) / c, 6);
-    else if (g > max(r, b)) h = (b - r) / c + 2;
-    else if (b > max(r, g)) h = (b - r) / c + 4;
+    else if (g > max(r, b)) h = fmod((b - r) / c + 2, 6);
+    else if (b > max(r, g)) h = fmod((r - g) / c + 4, 6);
     else h = 0.0; // "undefined"; doesn't really matter what this value is though
 
     float v = M;
@@ -55,8 +55,8 @@ vec4 toHSV (vec4 rgba) {
 // imported from gsb
 vec4 fromHSV (vec4 hsva) {
     auto h = hsva.x, s = hsva.y, v = hsva.z;
-    
-    h *= 6;
+
+    h = fmod(h, 1.0) * 6;
 
     float c = s * v; // chroma
     float x = c * (1 - abs(fmod(h, 2) - 1));
@@ -82,14 +82,29 @@ unittest {
     assertEq(color("#ff0000").withAlpha(0.5), vec4(1, 0, 0, 0.5));
     assertEq(color("red"), color("#ff0000"));
 
+    assertEq(color("red").toHSV,   vec4(0.0 / 3, 1, 1, 1));
+    assertEq(color("green").toHSV, vec4(1.0 / 3, 1, 1, 1));
+    assertEq(color("blue").toHSV,  vec4(2.0 / 3, 1, 1, 1));
+    assertEq(color("white").toHSV, vec4(0, 0, 0, 1));
+    assertEq(color("black").toHSV, vec4(0, 0, 1, 1));
+
+    assertEq(vec4(0.0 / 6, 1, 1, 1).fromHSV, color("red"));
+    assertEq(vec4(1.0 / 6, 1, 1, 1).fromHSV, vec4(1, 1, 0, 1));
+    assertEq(vec4(2.0 / 6, 1, 1, 1).fromHSV, color("green"));
+    assertEq(vec4(3.0 / 6, 1, 1, 1).fromHSV, vec4(0, 1, 1, 1));
+    assertEq(vec4(4.0 / 6, 1, 1, 1).fromHSV, color("blue"));
+    assertEq(vec4(5.0 / 6, 1, 1, 1).fromHSV, vec4(1, 0, 1, 1));
+
+    assertEq(vec4(0, 0, 1, 1).fromHSV, color("black"));
+    assertEq(vec4(1, 0, 1, 1).fromHSV, color("black"));
+    assertEq(vec4(0.5, 0, 1, 1).fromHSV, color("black"));
+    assertEq(vec4(0, 0, 0, 1).fromHSV, color("white"));
+    assertEq(vec4(1, 0, 0, 1).fromHSV, color("white"));
+    assertEq(vec4(0.5, 0, 0, 1).fromHSV, color("white"));
+
     assertEq(color("red").toHSV.fromHSV, color("red"));
     assertEq(color("green").toHSV.fromHSV, color("green"));
     assertEq(color("blue").toHSV.fromHSV, color("blue"));
     assertEq(color("black").toHSV.fromHSV, color("black"));
-    assertEq(color("white").toHSV.fromHSV, color("white"));
-
-    assertEq(vec4(0, 1, 1, 1).fromHSV, color("red"));
-    assertEq(vec4(0, 0, 1, 1).fromHSV, color("white"));
-    assertEq(vec4(0, 0, 0, 1).fromHSV, color("black"));
-    assertEq(vec4(0, 1, 0, 1).fromHSV, color("black"));
+    assertEq(color("white").toHSV.fromHSV, color("white"));    
 }
