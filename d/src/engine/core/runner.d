@@ -7,8 +7,9 @@ import engine.core.window.context: WindowContextVersion;
 import engine.utils.color;
 import engine.utils.time;
 import engine.renderer;
+import engine.core.ecs;
 import std.stdio: writefln;
-public import star.entity;
+import std.format: format;
 
 public mixin template runGame (GameDelegate) {
     void main (string[] args) {
@@ -32,6 +33,7 @@ extern(C) nothrow void glfwPrintError(int error, const(char)* description) {
 }
 
 public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
+    TimeTracker timeTracker;
     try {
         writefln("initializing glfw + opengl...");
         DerelictGL3.load();
@@ -53,13 +55,24 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
 
         // setup...
         writefln("registering ecs components + systems...");
-        auto ecs = new star.entity.Engine();
+        auto ecs = makeECS;
         dg.registerComponents(ecs.entities);
         dg.registerSystems(ecs.systems);
+        
+        timeTracker.initFinished;
+        writefln("initialized in %s", timeTracker.startupTime);
 
         // run game with window...
         writefln("starting main loop...");
+        Time time;
         while (!window.shouldClose) {
+            // update time...
+            timeTracker.beginFrame();
+            timeTracker.update(time);
+            timeTracker.avgDeltaTime.map((Duration dt) {
+                window.setTitle(format("%s fps", 1.0 / dt.toFloatSecs));
+            });
+
             dg.onBeginFrame();
             foreach (event; window.processEvents) {
                 dg.handleEvent(event);
@@ -67,12 +80,14 @@ public void run (GameDelegate)(GameDelegate dg, string[] systemArgs) {
             renderer.beginFrame();
 
             // run systems...
+            ecs.systems.run(time.deltaTime.fromFloatSecs);
 
             // draw stuff...
             dg.render(renderer);
 
             renderer.endFrame();
             dg.onEndFrame();
+            timeTracker.endFrame();
             window.swapBuffers();
         }
     } catch (Exception e) {

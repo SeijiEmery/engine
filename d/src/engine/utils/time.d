@@ -1,8 +1,7 @@
 module engine.utils.time;
 import engine.utils.maybe;
-import std.datetime: StopWatch;
 import std.exception: enforce;
-import core.time;
+public import core.time;
 
 /// Frame-specific time information useful for gameplay elements
 struct Time {
