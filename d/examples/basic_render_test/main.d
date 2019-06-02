@@ -9,10 +9,10 @@ struct BasicRenderTest {
     void registerSystems (ref SystemManager) {}
     void handleEvent (WindowEvent event) {}
     void render (Renderer)(ref Renderer renderer) {
-        renderer.draw(renderBox(mat4.identity, color("#ff0000")));
-        renderer.draw(renderBoxOutline(mat4.identity, color("#00ff00"), 0.1));
-        renderer.draw(renderCircle(mat4.identity, color("#0000ff")));
-        renderer.draw(renderCircleOutline(mat4.identity, color("#ffff00"), 0.1));
+        renderer.drawBox(mat4.identity, color("#ff0000"));
+        renderer.drawBoxOutline(mat4.identity, color("#00ff00"), 0.1);
+        renderer.drawCircle(mat4.identity, color("#0000ff"));
+        renderer.drawCircleOutline(mat4.identity, color("#ffff00"), 0.1);
     }
     void onBeginFrame () {}
     void onEndFrame () {}

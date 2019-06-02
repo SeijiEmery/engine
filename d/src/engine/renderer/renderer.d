@@ -83,3 +83,9 @@ RenderItem renderCircleOutline (mat4 transform, vec4 color, float outline) {
     RenderPrimitive primitive = DrawCircleOutline(color, outline);
     return RenderItem(primitive, transform, transform.depth, color.a < 1.0);
 }
+
+// Extension methods on a renderer
+void drawBox (Renderer, Args...)(ref Renderer renderer, Args args) { renderer.draw(renderBox(args)); }
+void drawCircle (Renderer, Args...)(ref Renderer renderer, Args args) { renderer.draw(renderCircle(args)); }
+void drawBoxOutline (Renderer, Args...)(ref Renderer renderer, Args args) { renderer.draw(renderBoxOutline(args)); }
+void drawCircleOutline (Renderer, Args...)(ref Renderer renderer, Args args) { renderer.draw(renderCircleOutline(args)); }

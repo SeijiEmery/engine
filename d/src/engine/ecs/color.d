@@ -1,4 +1,4 @@
-module engine.ecs.transform;
+module engine.ecs.color;
 import engine.core.ecs;
 import engine.utils.math;
 public import engine.utils.color;

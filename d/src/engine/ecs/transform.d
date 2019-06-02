@@ -9,17 +9,16 @@ import engine.utils.math;
 
 class TransformSystem : System {
     override void run (EntityManager entities, EventManager events, Duration dt) {
-        foreach (ref worldTransform, pos, rot, scale; 
+        foreach (entity, worldTransform, position, rot, scale; 
                 entities.entitiesWith!(WorldTransform, Position, Rotation, Scale)
         ) {
-
             auto cos_theta = rot.angle.cos;
             auto sin_theta = rot.angle.sin;
-            auto scale = scale.scale;
-
+            auto s = scale.scale;
+            auto pos = position.pos;
             worldTransform.matrix = mat4(
-                scale.x * cos_theta, scale.x * -sin_theta, 0.0, 0.0,
-                scale.y * sin_theta, scale.y * cos_theta, 0.0, 0.0,
+                s.x * cos_theta, s.x * -sin_theta, 0.0, 0.0,
+                s.y * sin_theta, s.y * cos_theta, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
                 pos.x, pos.y, pos.z, 1.0
             );

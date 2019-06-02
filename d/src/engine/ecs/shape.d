@@ -1,4 +1,4 @@
-module engine.ecs.transform;
+module engine.ecs.shape;
 import engine.core.ecs;
 import engine.utils.math;
 

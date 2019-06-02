@@ -1,6 +1,6 @@
 module engine.ecs.oscillators;
-module engine.ecs.transform;
-module engine.ecs.color;
+import engine.ecs.transform;
+import engine.ecs.color;
 import engine.core.ecs;
 import engine.utils.math;
 

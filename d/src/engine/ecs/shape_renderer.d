@@ -1,6 +1,6 @@
 module engine.ecs.shape_renderer;
 import engine.core.ecs;
-import engine.core.renderer;
+import engine.renderer;
 import engine.utils.math;
 import engine.utils.color;
 import engine.utils.maybe;
