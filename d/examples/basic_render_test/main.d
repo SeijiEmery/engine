@@ -3,9 +3,46 @@ import engine.renderer;
 import engine.utils.math;
 import engine.utils.color;
 import std.stdio;
+import engine.ecs.transform;
+
+
+//mixin describeGame!((ref GameInstance game) {
+//    writefln("initializing...");
+//    auto box = game.createEntity()
+//        .with!Position(vec2(0.0, 0.0))
+//        .with!Transform
+//        .with!Renderable;
+
+//    scope(exit) {
+//        writefln("terminating...");
+//    }
+//    onEvent!((GameEvent event) {
+//        event.tryVisit!(
+//            (WindowEvent event) => event.tryVisit!(
+//                (KeyInputEvent event) { writefln("got key event %s", event); },
+//            ),
+//        );
+//    });
+//    eachFrame!((ref Frame frame){
+//        writefln("frame %d at %s, %s fps (%s)", frame.id, frame.time, frame.fps, frame.dt);
+//        frame.renderer.drawBox(mat4.identity, color("red"));
+//    });
+//    runGame();
+//});
+
+//void runRenderTest (ref GameInstance game) {
+//    void onExit () { writefln("terminating..."); }
+//    void onFrame (ref GameFrame frame) { }
+//    void onEvent (GameEvent event) {
+
+//    }
+//    game.withMethods!(onExit, onFrame, onEvent);
+//    game.start();
+//}
+//mixin runGame!runRenderTest;
 
 struct BasicRenderTest {
-    void registerComponents (ref EntityManager) {}
+    void registerComponents (ref EntityManager entities) {}
     void registerSystems (ref SystemManager) {}
     void handleEvent (WindowEvent event) {}
     void render (Renderer)(ref Renderer renderer) {
@@ -21,3 +58,7 @@ struct BasicRenderTest {
     }
 }
 mixin runGame!BasicRenderTest;
+
+//mixin launchGame!((ref GameInstance game) {
+    
+//});
