@@ -74,8 +74,13 @@ auto parseSystemic (string input) {
     auto ast = Systemic(typedecl);
     return tuple(parse(ast), tbody);
 }
+
+public @component struct Rotator { float speed; }
+public @singleton struct DeltaTime { float dt; alias dt this; }
+public @component struct RotationAngle { float angle; alias angle this; }
+
 SystemicResourceType getResourceType (string type)() {
-    mixin(`alias T = typeof(`~type~`);`~q{
+    mixin(`alias T = `~type~`;`~q{
         static if (hasUDA!(T, component)) return SystemicResourceType.Component;
         static if (hasUDA!(T, singleton)) return SystemicResourceType.Singleton;
         assert(false, format("invalid type '%s'", T.stringof));     
@@ -92,16 +97,11 @@ SystemicParams lookupSystemicParams (PartialSystemicParams params)() {
     //}
     //return result;
 }
-public @component struct Rotator { float speed; }
-public @singleton struct DeltaTime { float dt; alias dt this; }
-public @component struct RotationAngle { float angle; alias angle this; }
-
-void generateSystemic (string input)() {
+string generateSystemic (string input)() {
     enum args = parseSystemic(input);
     enum params = lookupSystemicParams!(args[0]);
+    return createSystemic!(params, args[1]);
 }
-
-
 
 void run_tests (SystemicParams stuff)() {
     //enum tsig = systemic_typesig(stuff);
@@ -122,31 +122,53 @@ void run_tests (SystemicParams stuff)() {
     writefln("%s, %s", entity.component!RotationAngle.angle, resources.get!DeltaTime);
 }
 
-mixin createSystemic!([
-        tuple("Rotator", "r", SystemicQualifier.In, SystemicResourceType.Component),
-        tuple("DeltaTime", "dt", SystemicQualifier.In, SystemicResourceType.Singleton),
-        tuple("RotationAngle", "rot", SystemicQualifier.InOut, SystemicResourceType.Component),
-    ], q{rot.angle += r.speed * dt;});
+//mixin createSystemic!([
+//        tuple("Rotator", "r", SystemicQualifier.In, SystemicResourceType.Component),
+//        tuple("DeltaTime", "dt", SystemicQualifier.In, SystemicResourceType.Singleton),
+//        tuple("RotationAngle", "rot", SystemicQualifier.InOut, SystemicResourceType.Component),
+//    ], q{rot.angle += r.speed * dt;});
+
+mixin(generateSystemic!q{ 
+    update Rotator r, DeltaTime dt, RotationAngle rot { 
+        rot.angle += r.speed * dt; 
+    }
+});
+mixin(generateSystemic!(q{
+    in Rotator r, in DeltaTime dt, inout RotationAngle rot 
+        => rot.angle += r.speed * dt
+}));
 
 
 void main () {
+    writefln("%s", generateSystemic!(q{
+        in Rotator r, in DeltaTime dt, inout RotationAngle rot 
+        => rot.angle += r.speed * dt
+    }));
+
+
     writefln("%s", parseSystemic(q{
         in Rotator r, in DeltaTime dt, inout RotationAngle rot 
             => rot.angle += r.speed * dt
     }));
 
-    generateSystemic!(q{
-        in Rotator r, in DeltaTime dt, inout RotationAngle rot 
-            => rot.angle += r.speed * dt
-    });
-
     visitSystems!((string name, SystemicFunction fcn) {
         writefln("  %s", name);
     });
     writefln("testing...");
-    run_tests!([
-        tuple("Rotator", "r", SystemicQualifier.In, SystemicResourceType.Component),
-        tuple("DeltaTime", "dt", SystemicQualifier.In, SystemicResourceType.Singleton),
-        tuple("RotationAngle", "rot", SystemicQualifier.InOut, SystemicResourceType.Component),
-    ]);
+    //run_tests!([
+    //    tuple("Rotator", "r", SystemicQualifier.In, SystemicResourceType.Component),
+    //    tuple("DeltaTime", "dt", SystemicQualifier.In, SystemicResourceType.Singleton),
+    //    tuple("RotationAngle", "rot", SystemicQualifier.InOut, SystemicResourceType.Component),
+    //]);
+
+    auto ecs = new EntitySysD;
+    auto entity = ecs.entities.create();
+    entity.register!Rotator(1.0);
+    entity.register!RotationAngle(0.0);
+    SystemsGlobalResourceManager resources;
+    resources.create!DeltaTime(1.0 / 33.4);
+
+    writefln("%s, %s", entity.component!RotationAngle.angle, resources.get!DeltaTime);
+    runSystems(ecs.entities, resources);
+    writefln("%s, %s", entity.component!RotationAngle.angle, resources.get!DeltaTime);
 }
