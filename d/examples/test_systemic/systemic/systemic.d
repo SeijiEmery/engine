@@ -27,7 +27,7 @@ public void registerSystemFunction (string id, SystemicFunction fcn) {
 public string createSystemic (SystemicParams params, string bodyImpl)() {
     auto fcn = makeSystemicFunction!(params, bodyImpl);
     auto id  = typeSignature(params);
-    return "shared static this () {\n\tregisterSystemFunction(\n\t\t\""~id~"\",\n\t\t"~fcn~"\n\t);\n}";
+    return "registerSystemFunction(\n\t\t\""~id~"\",\n\t\t"~fcn~"\n\t);";
 }
 private shared static SystemicFunction[string] g_registeredSystems;
 

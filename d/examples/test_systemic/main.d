@@ -97,10 +97,14 @@ SystemicParams lookupSystemicParams (PartialSystemicParams params)() {
     //}
     //return result;
 }
-string generateSystemic (string input)() {
+
+string registerSystemic (string input)() {
     enum args = parseSystemic(input);
     enum params = lookupSystemicParams!(args[0]);
     return createSystemic!(params, args[1]);
+}
+string generateSystemic (string input)() {
+    return "shared static this () {\n\t"~registerSystemic!input~"\n}";
 }
 
 void run_tests (SystemicParams stuff)() {
@@ -128,16 +132,49 @@ void run_tests (SystemicParams stuff)() {
 //        tuple("RotationAngle", "rot", SystemicQualifier.InOut, SystemicResourceType.Component),
 //    ], q{rot.angle += r.speed * dt;});
 
-mixin(generateSystemic!q{ 
-    update Rotator r, DeltaTime dt, RotationAngle rot { 
-        rot.angle += r.speed * dt; 
+//mixin(generateSystemic!(q{
+//    in Rotator r, in DeltaTime dt, inout RotationAngle rot 
+//        => rot.angle += r.speed * dt
+//}));
+
+string decs (string stuff)() { return ""; }
+mixin(decs!q{
+    resource DeltaTime = float
+    component Rotator { float speed = 1.0; } requires(RotationAngle)
+    component RotationAngle = float
+
+    update RotationAngle angle, Rotator r, DeltaTime dt {
+        angle += r.speed * dt;
+    }
+
+    component Position = vec2  defaults { vec2(0.0, 0.0) }
+    component Scale    = vec2  defaults { vec2(1.0, 1.0) }
+    component Depth    = float defaults { 0.0 }
+
+    component LocalTransform = mat4 
+        requires(Position, Scale, Depth, RotationAngle)
+        defaults { mat4.identity }
+    
+    component WorldTransform = mat4
+        requires(LocalTransform)
+        defaults { mat4.identity }
+
+    update LocalTransform matrix, Position pos, RotationAngle rot, Scale scale {
+        matrix = mat4(
+            // ...
+        );
+    }
+    update LocalTransform localTransform, WorldTransform worldTransform {
+        worldTransform = localTransform;
+    }
+
+    resource Renderer = IRenderer
+    component ShapeRenderer { vec4 color } requires Shape
+
+    update Renderer renderer, WorldTransform transform, Shape shape, ShapeRenderer shapeRenderer {
+        renderer.drawShape(transform, shape, shapeRenderer.color);
     }
 });
-mixin(generateSystemic!(q{
-    in Rotator r, in DeltaTime dt, inout RotationAngle rot 
-        => rot.angle += r.speed * dt
-}));
-
 
 void main () {
     writefln("%s", generateSystemic!(q{
@@ -167,7 +204,14 @@ void main () {
     entity.register!RotationAngle(0.0);
     SystemsGlobalResourceManager resources;
     resources.create!DeltaTime(1.0 / 33.4);
-
+    writefln("%s", registerSystemic!q{
+        in Rotator r, in DeltaTime dt, inout RotationAngle rot 
+            => rot.angle += r.speed * dt
+    });
+    mixin(registerSystemic!(q{
+        in Rotator r, in DeltaTime dt, inout RotationAngle rot 
+            => rot.angle += r.speed * dt
+    }));
     writefln("%s, %s", entity.component!RotationAngle.angle, resources.get!DeltaTime);
     runSystems(ecs.entities, resources);
     writefln("%s, %s", entity.component!RotationAngle.angle, resources.get!DeltaTime);
