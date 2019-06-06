@@ -51,11 +51,11 @@ string systemic_body_impl (SystemicParams params, string bodyImpl) {
 struct SystemsGlobalResourceManager {
     private void*[TypeInfo] _resources;
 
-    void create (T)(Args...) {
+    void create (T, Args...)(Args args) {
         import std.experimental.allocator;
         TypeInfo key = typeid(T);
         if (key !in _resources) {
-            _resources[key] = cast(void*)theAllocator.make!T(Args).ptr;
+            _resources[key] = cast(void*)theAllocator.make!T(args);
         }
     }
     const(T) get (T)() if (is(T == struct)) {
@@ -87,10 +87,11 @@ void run_tests (SystemicParams stuff)() {
     entity.register!Rotator(1.0);
     entity.register!RotationAngle(0.0);
     SystemsGlobalResourceManager resources;
+    resources.create!DeltaTime(1.0 / 33.4);
 
-    writefln("%s", entity.component!RotationAngle.angle);
+    writefln("%s, %s", entity.component!RotationAngle.angle, resources.get!DeltaTime);
     systemFunction(ecs.entities, resources);
-    writefln("%s", entity.component!RotationAngle.angle);
+    writefln("%s, %s", entity.component!RotationAngle.angle, resources.get!DeltaTime);
 }
 
 //mixin generate_systemic!(
