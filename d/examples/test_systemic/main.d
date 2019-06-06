@@ -2,6 +2,8 @@ import std.stdio: writefln;
 import std.algorithm;
 import std.typecons;
 import std.string: strip;
+import std.traits: hasUDA;
+import std.format: format;
 import systemic;
 import pegged.grammar;
 
@@ -20,8 +22,9 @@ SystemicResourceType systemicTypeOfType (T)() {
     else static if (hasUDA!(T, singleton)) return SystemicResourceType.Singleton;
     else enforce(false, format("type %s does not have component or singleton annotations!", T.stringof));
 }
-
-alias PartialSystemicParams = Tuple!(string, string, SystemicQualifier)[];
+struct PartialSystemParam { string type; string variable; SystemicQualifier qualifier; }
+alias PartialSystemicParams = PartialSystemParam[];
+//alias PartialSystemicParams = Tuple!(string, string, SystemicQualifier)[];
 
 auto parseSystemic (string input) {
     void parseDecl (ParseTree p, ref PartialSystemicParams params) {
@@ -43,7 +46,7 @@ auto parseSystemic (string input) {
                         default: writefln("invalid parse node in %s: '%s': %s", p.name, item.name, item);
                     }
                 }
-                params ~= tuple(type, variable, qualifier);
+                params ~= PartialSystemParam(type, variable, qualifier);
             } break;
             default: writefln("invalid parse node '%s': %s!", p.name, p);
         }
@@ -71,11 +74,34 @@ auto parseSystemic (string input) {
     auto ast = Systemic(typedecl);
     return tuple(parse(ast), tbody);
 }
-
-
+SystemicResourceType getResourceType (string type)() {
+    mixin(`alias T = typeof(`~type~`);`~q{
+        static if (hasUDA!(T, component)) return SystemicResourceType.Component;
+        static if (hasUDA!(T, singleton)) return SystemicResourceType.Singleton;
+        assert(false, format("invalid type '%s'", T.stringof));     
+    });
+}
+SystemicParams lookupSystemicParams (PartialSystemicParams params)() {
+    SystemicParams result;
+    static if (params.length == 0) return [];
+    else return tuple(params[0].type, params[0].variable, params[0].qualifier, getResourceType!(params[0].type))
+        ~ lookupSystemicParams!(params[1..$]);
+    //foreach (param; params) {
+    //    auto resourceType = getResourceType!(param.type);
+    //    //result ~= tuple(param[0], param[1], param[2], getResourceType!(param[0]));
+    //}
+    //return result;
+}
 public @component struct Rotator { float speed; }
 public @singleton struct DeltaTime { float dt; alias dt this; }
 public @component struct RotationAngle { float angle; alias angle this; }
+
+void generateSystemic (string input)() {
+    enum args = parseSystemic(input);
+    enum params = lookupSystemicParams!(args[0]);
+}
+
+
 
 void run_tests (SystemicParams stuff)() {
     //enum tsig = systemic_typesig(stuff);
@@ -108,6 +134,11 @@ void main () {
         in Rotator r, in DeltaTime dt, inout RotationAngle rot 
             => rot.angle += r.speed * dt
     }));
+
+    generateSystemic!(q{
+        in Rotator r, in DeltaTime dt, inout RotationAngle rot 
+            => rot.angle += r.speed * dt
+    });
 
     visitSystems!((string name, SystemicFunction fcn) {
         writefln("  %s", name);
