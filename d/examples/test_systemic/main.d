@@ -1,5 +1,8 @@
 import std.stdio: writefln;
 import entitysysd;
+import std.algorithm;
+import std.typecons;
+import std.array: join;
 
 //mixin generate_systemic!(
 //    q{  Rotator r, DeltaTime dt -> RotationAngle angle },
@@ -15,6 +18,17 @@ import entitysysd;
 @component struct DeltaTime { float dt; }
 @component struct RotationAngle { float angle; }
 
+public enum SystemicParam { In, Out, InOut }
+string systemic_typesig (Tuple!(string, string, SystemicParam)[] args) {
+    auto a = args.filter!((Tuple!(string, string, SystemicParam) a) => a[2] != SystemicParam.Out).map!"a[0]".join(", ");
+    auto b = args.filter!((Tuple!(string, string, SystemicParam) a) => a[2] != SystemicParam.In).map!"a[0]".join(", ");
+    return a != "" ? b != "" ? a ~ " -> " ~ b : a : " -> " ~ b;
+}
+void run_tests (Tuple!(string, string, SystemicParam)[] stuff)() {
+    enum tsig = systemic_typesig(stuff);
+    writefln("%s", tsig);
+}
+
 mixin generate_systemic!(
     systemic_typelist!(
         systemic_typedecl!("Rotator", "r", SystemicParam.In),
@@ -25,7 +39,6 @@ mixin generate_systemic!(
     "
 );
 
-enum SystemicParam { In, Out, InOut }
 struct systemic_typedecl (string tname, string vname, SystemicParam inp) {
     alias type  = tname;
     alias var   = vname;
@@ -85,7 +98,6 @@ string tsignature (Args...)() {
 string systemic_body (alias T, alias B)() {
     return "foreach (entity, " ~ eparams!(T.args) ~ "; entities.entitiesWith!(" ~ tparams!(T.args) ~ ")) { " ~ B ~ " }";
 }
-
 struct SystemsGlobalResourceManager {}
 alias SystemFunction = void delegate (ref EntityManager, ref SystemsGlobalResourceManager);
 shared static SystemFunction[string] g_registered_systems;
@@ -107,15 +119,21 @@ void register_system (alias systemic_function)(string id) {
     g_registered_systems[id] = &systemic_function;
 }
 void main () {
-    foreach (name, sys; g_registered_systems) {
-        writefln("have system '%s': %p", name, cast(void*)sys);
-    }
-    alias stuff = systemic_typelist!(
-        systemic_typedecl!("Rotator", "r", SystemicParam.In),
-        systemic_typedecl!("DeltaTime", "dt", SystemicParam.In),
-        systemic_typedecl!("RotationAngle", "angle", SystemicParam.InOut),
-    );
-    enum result = eparams!(stuff.args);
-    enum tres = tsignature!(stuff.args);
-    writefln("%s :: %s", result, tres);
+    //foreach (name, sys; g_registered_systems) {
+    //    writefln("have system '%s': %p", name, cast(void*)sys);
+    //}
+    //alias stuff = systemic_typelist!(
+    //    systemic_typedecl!("Rotator", "r", SystemicParam.In),
+    //    systemic_typedecl!("DeltaTime", "dt", SystemicParam.In),
+    //    systemic_typedecl!("RotationAngle", "angle", SystemicParam.InOut),
+    //);
+    //enum result = eparams!(stuff.args);
+    //enum tres = tsignature!(stuff.args);
+    //writefln("%s :: %s", result, tres);
+
+    run_tests!([
+        tuple("Rotator", "r", SystemicParam.In),
+        tuple("DeltaTime", "dt", SystemicParam.In),
+        tuple("RotationAngle", "angle", SystemicParam.InOut),
+    ]);
 }
