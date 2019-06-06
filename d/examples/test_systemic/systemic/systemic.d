@@ -44,7 +44,7 @@ public void visitSystems (alias visitor)() {
     }
 }
 public void runSystems (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
-    visitSystems!((ref SystemicFunction fcn) {
+    visitSystems!((SystemicFunction fcn) {
         fcn(entities, resources);
     });
 }
