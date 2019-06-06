@@ -53,16 +53,30 @@ auto getMut (T)(ref SystemsGlobalResourceManager resources) {
     T* stuff = null;
     return stuff;
 }
+alias SystemicFunction = void delegate (ref EntityManager, ref SystemsGlobalResourceManager);
+
+SystemicFunction systemic (SystemicParams params, string bodyImpl)() {
+    return delegate (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
+        mixin(systemic_body_impl(params, bodyImpl));
+    };
+}
 
 void run_tests (SystemicParams stuff)() {
     enum tsig = systemic_typesig(stuff);
     enum tbody = systemic_body_impl(stuff, q{rot.angle += r.speed * dt;});
     writefln("%s", tsig);
     writefln("%s", tbody);
+    auto systemFunction = systemic!(stuff, q{rot.angle += r.speed * dt;});
 
-    auto systemFunction = delegate (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
-        mixin(systemic_body_impl(stuff, q{rot.angle += r.speed * dt;}));
-    };
+    auto ecs = new EntitySysD;
+    auto entity = ecs.entities.create();
+    entity.register!Rotator(1.0);
+    entity.register!RotationAngle(0.0);
+    SystemsGlobalResourceManager resources;
+
+    writefln("%s", entity.component!RotationAngle.angle);
+    systemFunction(ecs.entities, resources);
+    writefln("%s", entity.component!RotationAngle.angle);
 }
 
 //mixin generate_systemic!(
