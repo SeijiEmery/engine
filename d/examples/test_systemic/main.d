@@ -21,7 +21,7 @@ mixin generate_systemic!(
         systemic_typedecl!("DeltaTime", "dt", SystemicParam.In),
         systemic_typedecl!("RotationAngle", "angle", SystemicParam.Out),
     ), "
-        angle += r.speed * dt;
+        angle.angle += r.speed * dt.dt;
     "
 );
 
@@ -36,12 +36,22 @@ struct systemic_typelist (Args...) {
 }
 string eparams (Args...)() {
     static if (Args.length == 0) return "";
-    else static if (Args.length == 1) return Args[0].var;
+    else static if (Args.length == 1) {
+        return Args[0].var;
+        //static if (Args[0].input == SystemicParam.In) return "const "~Args[0].var~"";
+        //else return Args[0].var;
+        //else return "ref "~Args[0].var;
+    }
     else return eparams!(Args[0..1]) ~ ", " ~ eparams!(Args[1..$]);
 }
 string tparams (Args...)() {
     static if (Args.length == 0) return "";
-    else static if (Args.length == 1) return Args[0].type;
+    else static if (Args.length == 1) {
+        return Args[0].type;
+        //static if (Args[0].input == SystemicParam.In) return "const(" ~ Args[0].type ~ ")";
+        //else return Args[0].type;
+        //else return "ref "~Args[0].type;
+    }
     else return tparams!(Args[0..1]) ~ ", " ~ tparams!(Args[1..$]);
 }
 string tparams_in (Args...)() {
@@ -72,26 +82,32 @@ string tsignature (Args...)() {
         //(right != "" ? right : "")
         : right;
 }
+string systemic_body (alias T, alias B)() {
+    return "foreach (entity, " ~ eparams!(T.args) ~ "; entities.entitiesWith!(" ~ tparams!(T.args) ~ ")) { " ~ B ~ " }";
+}
 
+struct SystemsGlobalResourceManager {}
+alias SystemFunction = void delegate (ref EntityManager, ref SystemsGlobalResourceManager);
+shared static SystemFunction[string] g_registered_systems;
+
+alias SystemBuilder = void delegate ();
+shared static SystemBuilder[] g_system_builders;
 
 mixin template generate_systemic (alias T, alias B) {
     shared static this () {
-        class Sys : System {
-            override void run (EntityManager entities, EventManager events, Duration dt) {
-                //mixin("foreach (entity" ~ eparams!(T.args) ~ "; entities.entitiesWith!(" ~ tparams!(T.args) ~ ")) { " ~ B ~ " }");
-            }
+        void systemic_impl (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
+            mixin(systemic_body!(T, B));
         }
-        register_system!Sys(tparams!(T.args));
+        g_system_builders ~= delegate () {
+            register_system!systemic_impl(tsignature!(T.args));
+        };
     }
 }
-shared static System[string] registered_systems;
-void register_system (System)(string id) {
-    writefln("registering '%s'", id);
-    //register_system[id] = new System();
+void register_system (alias systemic_function)(string id) {
+    g_registered_systems[id] = &systemic_function;
 }
-
 void main () {
-    foreach (name, sys; registered_systems) {
+    foreach (name, sys; g_registered_systems) {
         writefln("have system '%s': %p", name, cast(void*)sys);
     }
     alias stuff = systemic_typelist!(
