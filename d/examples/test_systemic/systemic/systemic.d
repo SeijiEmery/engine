@@ -9,9 +9,9 @@ public import entitysysd;
 // new attributes
 enum singleton;
 
-public enum SystemicParam { In, Out, InOut }
+public enum SystemicQualifier { In, Out, InOut }
 public enum SystemicResourceType { Component, Singleton }
-public alias SystemicParamTuple = Tuple!(string, string, SystemicParam, SystemicResourceType);
+public alias SystemicParamTuple = Tuple!(string, string, SystemicQualifier, SystemicResourceType);
 public alias SystemicParams = SystemicParamTuple[];
 
 public alias SystemicFunction = void delegate (ref EntityManager, ref SystemsGlobalResourceManager);
@@ -50,15 +50,15 @@ public void runSystems (ref EntityManager entities, ref SystemsGlobalResourceMan
 }
 
 private string typeSignature (SystemicParams params) {
-    auto a = params.filter!((SystemicParamTuple a) => a[2] != SystemicParam.Out).map!"a[0]".join(", ");
-    auto b = params.filter!((SystemicParamTuple a) => a[2] != SystemicParam.In).map!"a[0]".join(", ");
+    auto a = params.filter!((SystemicParamTuple a) => a[2] != SystemicQualifier.Out).map!"a[0]".join(", ");
+    auto b = params.filter!((SystemicParamTuple a) => a[2] != SystemicQualifier.In).map!"a[0]".join(", ");
     return a != "" ? b != "" ? a ~ " -> " ~ b : a : " -> " ~ b;
 }
 public string makeSystemicFunctionBodyImpl (SystemicParams params, string bodyImpl) {
     auto resources = params.filter!((SystemicParamTuple a) => a[3] == SystemicResourceType.Singleton);
     auto components = params.filter!((SystemicParamTuple a) => a[3] == SystemicResourceType.Component);
     auto fetchResources = resources.map!(
-        (SystemicParamTuple a) => a[2] == SystemicParam.In ?
+        (SystemicParamTuple a) => a[2] == SystemicQualifier.In ?
             "auto "~a[1]~" = resources.get!"~a[0]~";\n" :
             "auto "~a[1]~" = resources.getMut!"~a[0]~";\n")
         .join("");

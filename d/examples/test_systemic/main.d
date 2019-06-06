@@ -8,39 +8,64 @@ mixin(grammar(`
 Systemic:
     SystemDefn < TypeDecls "=>"
     TypeDecls  < TypeDecl ("," TypeDecl)*
-    TypeDecl   < Qualifier ComponentOrSingletonType Variable
+    TypeDecl   < Qualifier Type Variable
     Qualifier  < "inout" / "in" / "out"
-    ComponentOrSingletonType < identifier
+    Type < identifier
     Variable   < identifier
 `));
 
-auto parseSystemic (string input) {
-    auto ast = Systemic(input);
-    SystemicParams params;
-
-    writefln("%s", ast.matches);
-    writefln("%s", ast);
-    foreach (ref defn; ast.children) {
-        writefln("  %s", defn.matches);
-        writefln("  %s", defn);
-        foreach (ref typedecls; defn.children) {
-            writefln("  %s", typedecls.matches);
-            writefln("  %s", typedecls);
-            foreach (ref typedecl; typedecls.children) {
-                writefln("  %s", typedecl.matches);
-                writefln("  %s", typedecl);
-
-                foreach (item; typedecl.children) {
-                    writefln("  %s", item.matches);
-                    writefln("  %s", item);
-                }
-            }
-        }
-    }
-    return tuple(params, "");
+SystemicResourceType systemicTypeOfType (T)() {
+    static if (hasUDA!(T, component)) return SystemicResourceType.Component;
+    else static if (hasUDA!(T, singleton)) return SystemicResourceType.Singleton;
+    else enforce(false, format("type %s does not have component or singleton annotations!", T.stringof));
 }
 
+alias PartialSystemicParams = Tuple!(string, string, SystemicQualifier)[];
 
+auto parseSystemic (string input) {
+    auto ast = Systemic(input);
+    void parseDecl (ParseTree p, ref PartialSystemicParams params) {
+        switch (p.name) {
+            case "Systemic.TypeDecls": foreach (child; p.children) parseDecl(child, params); break;
+            case "Systemic.TypeDecl": {
+                SystemicQualifier qualifier = SystemicQualifier.In;
+                string type, variable;
+                foreach (item; p.children) {
+                    switch (item.name) {
+                        case "Systemic.Qualifier": switch (item.matches[0]) {
+                            case "inout": qualifier = SystemicQualifier.InOut; break;
+                            case "in": qualifier = SystemicQualifier.In; break;
+                            case "out": qualifier = SystemicQualifier.Out; break;
+                            default: writefln("Invalid qualifier '%s': %s!", item.matches[0], item.matches);
+                        } break;
+                        case "Systemic.Type": type = item.matches[0]; break;
+                        case "Systemic.Variable": variable = item.matches[0]; break;
+                        default: writefln("invalid parse node in %s: '%s': %s", p.name, item.name, item);
+                    }
+                }
+                params ~= tuple(type, variable, qualifier);
+            } break;
+            default: writefln("invalid parse node '%s': %s!", p.name, p);
+        }
+    }
+    PartialSystemicParams parse (ParseTree p) {
+        switch(p.name) {
+            case "Systemic": return parse(p.children[0]);
+            case "Systemic.SystemDefn": {
+                foreach (defn; p.children) {
+                    PartialSystemicParams params;
+                    parseDecl(defn, params);
+                    return params;
+                } 
+            } break;
+            default: {
+                writefln("invalid parse node '%s': %s!", p.name, p);
+            }
+        }
+        assert(0);
+    }
+    return parse(ast);
+}
 
 
 public @component struct Rotator { float speed; }
@@ -67,9 +92,9 @@ void run_tests (SystemicParams stuff)() {
 }
 
 mixin createSystemic!([
-        tuple("Rotator", "r", SystemicParam.In, SystemicResourceType.Component),
-        tuple("DeltaTime", "dt", SystemicParam.In, SystemicResourceType.Singleton),
-        tuple("RotationAngle", "rot", SystemicParam.InOut, SystemicResourceType.Component),
+        tuple("Rotator", "r", SystemicQualifier.In, SystemicResourceType.Component),
+        tuple("DeltaTime", "dt", SystemicQualifier.In, SystemicResourceType.Singleton),
+        tuple("RotationAngle", "rot", SystemicQualifier.InOut, SystemicResourceType.Component),
     ], q{rot.angle += r.speed * dt;});
 
 
@@ -84,8 +109,8 @@ void main () {
     });
     writefln("testing...");
     run_tests!([
-        tuple("Rotator", "r", SystemicParam.In, SystemicResourceType.Component),
-        tuple("DeltaTime", "dt", SystemicParam.In, SystemicResourceType.Singleton),
-        tuple("RotationAngle", "rot", SystemicParam.InOut, SystemicResourceType.Component),
+        tuple("Rotator", "r", SystemicQualifier.In, SystemicResourceType.Component),
+        tuple("DeltaTime", "dt", SystemicQualifier.In, SystemicResourceType.Singleton),
+        tuple("RotationAngle", "rot", SystemicQualifier.InOut, SystemicResourceType.Component),
     ]);
 }
