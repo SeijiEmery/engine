@@ -40,7 +40,10 @@
 			"sourcePaths": ["examples/test_systemic"],
 			"importPaths": ["examples/test_systemic"],
 			"targetPath": "build",
-			"dependencies": { "entitysysd": "~>2.6.2" }
+			"dependencies": { 
+				"entitysysd": "~>2.6.2",
+				"pegged": "~>0.4.2"
+			}
 		}
 	]
 }

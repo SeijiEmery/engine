@@ -2,6 +2,46 @@ import std.stdio: writefln;
 import std.algorithm;
 import std.typecons;
 import systemic;
+import pegged.grammar;
+
+mixin(grammar(`
+Systemic:
+    SystemDefn < TypeDecls "=>"
+    TypeDecls  < TypeDecl ("," TypeDecl)*
+    TypeDecl   < Qualifier ComponentOrSingletonType Variable
+    Qualifier  < "inout" / "in" / "out"
+    ComponentOrSingletonType < identifier
+    Variable   < identifier
+`));
+
+auto parseSystemic (string input) {
+    auto ast = Systemic(input);
+    SystemicParams params;
+
+    writefln("%s", ast.matches);
+    writefln("%s", ast);
+    foreach (ref defn; ast.children) {
+        writefln("  %s", defn.matches);
+        writefln("  %s", defn);
+        foreach (ref typedecls; defn.children) {
+            writefln("  %s", typedecls.matches);
+            writefln("  %s", typedecls);
+            foreach (ref typedecl; typedecls.children) {
+                writefln("  %s", typedecl.matches);
+                writefln("  %s", typedecl);
+
+                foreach (item; typedecl.children) {
+                    writefln("  %s", item.matches);
+                    writefln("  %s", item);
+                }
+            }
+        }
+    }
+    return tuple(params, "");
+}
+
+
+
 
 public @component struct Rotator { float speed; }
 public @singleton struct DeltaTime { float dt; alias dt this; }
@@ -34,6 +74,11 @@ mixin createSystemic!([
 
 
 void main () {
+    writefln("%s", parseSystemic(q{
+        in Rotator r, in DeltaTime dt, inout RotationAngle rot 
+            => rot.angle += r.speed * dt
+    }));
+
     visitSystems!((string name, SystemicFunction fcn) {
         writefln("  %s", name);
     });
