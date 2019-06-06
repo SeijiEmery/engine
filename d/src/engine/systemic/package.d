@@ -6,6 +6,9 @@ enum systemic_ordering;
 enum singular;
 struct requires (Args...) { alias Stuff = Args; }
 
+enum input;
+enum output;
+
 //enum requires;
 
 //mixin template component (){}

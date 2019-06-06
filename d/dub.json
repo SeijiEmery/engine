@@ -33,6 +33,13 @@
 				"engine": { "path": "." }
 			},
 			"targetPath": "build"
+		},
+		{
+			"name": "test-systemic",
+			"targetType": "executable",
+			"sourcePaths": ["examples/test_systemic"],
+			"importPaths": ["examples/test_systemic"],
+			"targetPath": "build"
 		}
 	]
 }

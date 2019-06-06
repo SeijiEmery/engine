@@ -53,19 +53,19 @@ struct EntityRef {}
 // we can use this to (effectively) construct an execution graph, and we can do this (mostly) at compile time!
 // (I think / hope, anyways... not all of this has been implemented yet, but should be feasible...)
 
-pure @systemic void rotate (in Rotator r, in DeltaTime dt, out RotationAngle angle) {
+pure @systemic void rotate (in @input Rotator r, @input DeltaTime dt, @output RotationAngle angle) {
     angle += r.speed * dt;
 }
-pure @systemic void oscillatePosition (in TranslateOscillator osc, in AbsoluteTime t, out Position pos) {
+pure @systemic void oscillatePosition (@input TranslateOscillator osc, @input AbsoluteTime t, @output Position pos) {
     pos = lerp(osc.a, osc.b, sin(t * PI_2 * osc.speed));
 }
-pure @systemic void osclilateScale (in ScaleOscillator osc, in AbsoluteTime t, out Scale scale) {
+pure @systemic void osclilateScale (@input ScaleOscillator osc, @input AbsoluteTime t, @output Scale scale) {
     scale = lerp(osc.a, osc.b, sin(t * PI_2 * osc.speed));
 }
-pure @systemic void oscillateDepth (in DepthOscillator osc, in AbsoluteTime t, out Depth depth) {
+pure @systemic void oscillateDepth (@input DepthOscillator osc, @input AbsoluteTime t, @output Depth depth) {
     depth.depth = lerp(osc.a, osc.b, sin(t * PI_2 * osc.speed));
 }
-pure @systemic void color (in ColorOscillator osc, in AbsoluteTime t, out Color color) {
+pure @systemic void color (@input ColorOscillator osc, @input AbsoluteTime t, @output Color color) {
     color = lerp(osc.a, osc.b, sin(t * PI_2 * osc.speed));
 }
 
