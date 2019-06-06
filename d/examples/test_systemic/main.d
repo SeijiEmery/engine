@@ -12,7 +12,7 @@ void run_tests (SystemicParams stuff)() {
     //enum tbody = systemic_body_impl(stuff, q{rot.angle += r.speed * dt;});
     //writefln("%s", tsig);
     //writefln("%s", tbody);
-    auto systemFunction = systemicFunction!(stuff, q{rot.angle += r.speed * dt;});
+    auto systemFunction = mixin(makeSystemicFunction!(stuff, q{rot.angle += r.speed * dt;}));
 
     auto ecs = new EntitySysD;
     auto entity = ecs.entities.create();

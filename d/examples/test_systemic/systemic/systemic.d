@@ -16,18 +16,22 @@ public alias SystemicParams = SystemicParamTuple[];
 
 public alias SystemicFunction = void delegate (ref EntityManager, ref SystemsGlobalResourceManager);
 
-public SystemicFunction systemicFunction (SystemicParams params, string bodyImpl)() {
-    return delegate (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
-        mixin(makeBodyImpl(params, bodyImpl));
-    };
+public string makeSystemicFunction (SystemicParams params, string bodyImpl)() {
+    auto impl = makeSystemicFunctionBodyImpl(params, bodyImpl);
+    return "delegate (ref EntityManager entities, ref SystemsGlobalResourceManager resources) { mixin(\""
+        ~impl~"\"); }";
 }
 public void registerSystemFunction (SystemicParams params, SystemicFunction fcn) {
     g_registeredSystems[typeSignature(params)] = fcn;
 }
-public mixin template createSystemic (SystemicParams params, string bodyImpl) {
-    shared static this () {
-        registerSystemFunction(params, systemicFunction!(params, bodyImpl));
-    }
+public string createSystemic (SystemicParams params, string bodyImpl)() {
+    return q{
+        shared static this () {
+            registerSystemFunction(params, delegate (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
+                mixin(makeSystemicFunctionBodyImpl(params, bodyImpl));
+            });
+        }
+    };
 }
 private shared static SystemicFunction[string] g_registeredSystems;
 
@@ -50,8 +54,7 @@ private string typeSignature (SystemicParams params) {
     auto b = params.filter!((SystemicParamTuple a) => a[2] != SystemicParam.In).map!"a[0]".join(", ");
     return a != "" ? b != "" ? a ~ " -> " ~ b : a : " -> " ~ b;
 }
-//string makeBodyImpl (SystemicParams params, string body) {
-private string makeBodyImpl (SystemicParams params, string bodyImpl) {
+public string makeSystemicFunctionBodyImpl (SystemicParams params, string bodyImpl) {
     auto resources = params.filter!((SystemicParamTuple a) => a[3] == SystemicResourceType.Singleton);
     auto components = params.filter!((SystemicParamTuple a) => a[3] == SystemicResourceType.Component);
     auto fetchResources = resources.map!(
