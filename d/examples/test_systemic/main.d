@@ -13,31 +13,67 @@ import std.array: join;
 //        angle += r.speed * dt;
 //    }
 //});
+enum singleton;
 
 @component struct Rotator { float speed; }
-@component struct DeltaTime { float dt; }
-@component struct RotationAngle { float angle; }
+@singleton struct DeltaTime { float dt; alias dt this; }
+@component struct RotationAngle { float angle; alias angle this; }
 
 public enum SystemicParam { In, Out, InOut }
-string systemic_typesig (Tuple!(string, string, SystemicParam)[] args) {
-    auto a = args.filter!((Tuple!(string, string, SystemicParam) a) => a[2] != SystemicParam.Out).map!"a[0]".join(", ");
-    auto b = args.filter!((Tuple!(string, string, SystemicParam) a) => a[2] != SystemicParam.In).map!"a[0]".join(", ");
+public enum SystemicResourceType { Component, Singleton }
+
+alias SystemicParamTuple = Tuple!(string, string, SystemicParam, SystemicResourceType);
+alias SystemicParams = SystemicParamTuple[];
+
+string systemic_typesig (SystemicParams params) {
+    auto a = params.filter!((SystemicParamTuple a) => a[2] != SystemicParam.Out).map!"a[0]".join(", ");
+    auto b = params.filter!((SystemicParamTuple a) => a[2] != SystemicParam.In).map!"a[0]".join(", ");
     return a != "" ? b != "" ? a ~ " -> " ~ b : a : " -> " ~ b;
 }
-void run_tests (Tuple!(string, string, SystemicParam)[] stuff)() {
-    enum tsig = systemic_typesig(stuff);
-    writefln("%s", tsig);
+//string systemic_body_impl (SystemicParams params, string body) {
+string systemic_body_impl (SystemicParams params, string bodyImpl) {
+    auto resources = params.filter!((SystemicParamTuple a) => a[3] == SystemicResourceType.Singleton);
+    auto components = params.filter!((SystemicParamTuple a) => a[3] == SystemicResourceType.Component);
+    auto fetchResources = resources.map!(
+        (SystemicParamTuple a) => a[2] == SystemicParam.In ?
+            "const("~a[0]~") "~a[1]~" = resources.get!"~a[0]~";\n" :
+            "auto "~a[1]~" = resources.getMut!"~a[0]~";\n")
+        .join("");
+
+    auto componentVars  = components.map!((SystemicParamTuple a) => ", "~a[1]).join();
+    auto componentTypes = components.map!((SystemicParamTuple a) => a[0]).join(", ");
+    return fetchResources~"foreach (entity"~componentVars~"; entities.entitiesWith!("~componentTypes~")) {"~bodyImpl~"}";
 }
 
-mixin generate_systemic!(
-    systemic_typelist!(
-        systemic_typedecl!("Rotator", "r", SystemicParam.In),
-        systemic_typedecl!("DeltaTime", "dt", SystemicParam.In),
-        systemic_typedecl!("RotationAngle", "angle", SystemicParam.Out),
-    ), "
-        angle.angle += r.speed * dt.dt;
-    "
-);
+auto get (T)(ref SystemsGlobalResourceManager resources) {
+    const(T) stuff;
+    return stuff;
+}
+auto getMut (T)(ref SystemsGlobalResourceManager resources) {
+    T* stuff = null;
+    return stuff;
+}
+
+void run_tests (SystemicParams stuff)() {
+    enum tsig = systemic_typesig(stuff);
+    enum tbody = systemic_body_impl(stuff, q{rot.angle += r.speed * dt;});
+    writefln("%s", tsig);
+    writefln("%s", tbody);
+
+    auto systemFunction = delegate (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
+        mixin(systemic_body_impl(stuff, q{rot.angle += r.speed * dt;}));
+    };
+}
+
+//mixin generate_systemic!(
+//    systemic_typelist!(
+//        systemic_typedecl!("Rotator", "r", SystemicParam.In, SystemicResourceType.Component),
+//        systemic_typedecl!("DeltaTime", "dt", SystemicParam.In, SystemicResourceType.Singleton),
+//        systemic_typedecl!("RotationAngle", "angle", SystemicParam.Out, SystemicResourceType.Component),
+//    ), "
+//        angle.angle += r.speed * dt.dt;
+//    "
+//);
 
 struct systemic_typedecl (string tname, string vname, SystemicParam inp) {
     alias type  = tname;
@@ -130,10 +166,9 @@ void main () {
     //enum result = eparams!(stuff.args);
     //enum tres = tsignature!(stuff.args);
     //writefln("%s :: %s", result, tres);
-
     run_tests!([
-        tuple("Rotator", "r", SystemicParam.In),
-        tuple("DeltaTime", "dt", SystemicParam.In),
-        tuple("RotationAngle", "angle", SystemicParam.InOut),
+        tuple("Rotator", "r", SystemicParam.In, SystemicResourceType.Component),
+        tuple("DeltaTime", "dt", SystemicParam.In, SystemicResourceType.Singleton),
+        tuple("RotationAngle", "rot", SystemicParam.InOut, SystemicResourceType.Component),
     ]);
 }
