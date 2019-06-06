@@ -3,6 +3,7 @@ import entitysysd;
 import std.algorithm;
 import std.typecons;
 import std.array: join;
+import std.format: format;
 
 //mixin generate_systemic!(
 //    q{  Rotator r, DeltaTime dt -> RotationAngle angle },
@@ -36,7 +37,7 @@ string systemic_body_impl (SystemicParams params, string bodyImpl) {
     auto components = params.filter!((SystemicParamTuple a) => a[3] == SystemicResourceType.Component);
     auto fetchResources = resources.map!(
         (SystemicParamTuple a) => a[2] == SystemicParam.In ?
-            "const("~a[0]~") "~a[1]~" = resources.get!"~a[0]~";\n" :
+            "auto "~a[1]~" = resources.get!"~a[0]~";\n" :
             "auto "~a[1]~" = resources.getMut!"~a[0]~";\n")
         .join("");
 
@@ -45,13 +46,26 @@ string systemic_body_impl (SystemicParams params, string bodyImpl) {
     return fetchResources~"foreach (entity"~componentVars~"; entities.entitiesWith!("~componentTypes~")) {"~bodyImpl~"}";
 }
 
-auto get (T)(ref SystemsGlobalResourceManager resources) {
-    const(T) stuff;
-    return stuff;
-}
-auto getMut (T)(ref SystemsGlobalResourceManager resources) {
-    T* stuff = null;
-    return stuff;
+// NOT THREADSAFE!! 
+// (yet)
+struct SystemsGlobalResourceManager {
+    private void*[TypeInfo] _resources;
+
+    void create (T)(Args...) {
+        import std.experimental.allocator;
+        TypeInfo key = typeid(T);
+        if (key !in _resources) {
+            _resources[key] = cast(void*)theAllocator.make!T(Args).ptr;
+        }
+    }
+    const(T) get (T)() if (is(T == struct)) {
+        enforce(typeid(T) in _resources, format("resource %s was not created!", T.stringof));
+        return *(cast(const(T)*)_resources[typeid(T)]);
+    }
+    T* getMut (T)() if (is(T == struct)) {
+        enforce(typeid(T) in _resources, format("resource %s was not created!", T.stringof));
+        return cast(T*)_resources[typeid(T)];
+    }
 }
 alias SystemicFunction = void delegate (ref EntityManager, ref SystemsGlobalResourceManager);
 
@@ -148,7 +162,6 @@ string tsignature (Args...)() {
 string systemic_body (alias T, alias B)() {
     return "foreach (entity, " ~ eparams!(T.args) ~ "; entities.entitiesWith!(" ~ tparams!(T.args) ~ ")) { " ~ B ~ " }";
 }
-struct SystemsGlobalResourceManager {}
 alias SystemFunction = void delegate (ref EntityManager, ref SystemsGlobalResourceManager);
 shared static SystemFunction[string] g_registered_systems;
 
