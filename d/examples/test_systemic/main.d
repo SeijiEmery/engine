@@ -74,28 +74,12 @@ SystemicFunction systemic (SystemicParams params, string bodyImpl)() {
         mixin(systemic_body_impl(params, bodyImpl));
     };
 }
-
 mixin template generate_systemic (SystemicParams params, string bodyImpl) {
     shared static this () {
-        void systemic_impl (ref EntityManager entities, ref SystemsGlobalResourceManager resources) {
-            mixin(systemic_body_impl(params, bodyImpl));
-        }
-        g_system_builders ~= delegate () {
-            register_system!systemic_impl(systemic_typesig(params));
-        };
+        g_registered_systems[systemic_typesig(params)] = systemic!(params, bodyImpl);
     }
 }
-void register_system (alias systemic_function)(string id) {
-    g_registered_systems[id] = &systemic_function;
-}
-void registerSystems () {
-    foreach (builder; g_system_builders) {
-        builder();
-    }
-}
-alias SystemBuilder = void delegate ();
 shared static SystemicFunction[string] g_registered_systems;
-shared static SystemBuilder[] g_system_builders;
 
 void run_tests (SystemicParams stuff)() {
     enum tsig = systemic_typesig(stuff);
@@ -124,7 +108,6 @@ mixin generate_systemic!([
 
 
 void main () {
-    registerSystems();
     writefln("have %s system(s):", g_registered_systems.length);
     foreach (name, sys; g_registered_systems) {
         writefln("  %s", name);
