@@ -1,6 +1,7 @@
 import std.stdio: writefln;
 import std.algorithm;
 import std.typecons;
+import std.string: strip;
 import systemic;
 import pegged.grammar;
 
@@ -10,7 +11,7 @@ Systemic:
     TypeDecls  < TypeDecl ("," TypeDecl)*
     TypeDecl   < Qualifier Type Variable
     Qualifier  < "inout" / "in" / "out"
-    Type < identifier
+    Type       < identifier
     Variable   < identifier
 `));
 
@@ -23,7 +24,6 @@ SystemicResourceType systemicTypeOfType (T)() {
 alias PartialSystemicParams = Tuple!(string, string, SystemicQualifier)[];
 
 auto parseSystemic (string input) {
-    auto ast = Systemic(input);
     void parseDecl (ParseTree p, ref PartialSystemicParams params) {
         switch (p.name) {
             case "Systemic.TypeDecls": foreach (child; p.children) parseDecl(child, params); break;
@@ -64,7 +64,12 @@ auto parseSystemic (string input) {
         }
         assert(0);
     }
-    return parse(ast);
+    //enforce(input.hasBalancedParentheses('{', '}'), format("unbalanced '{', '}': `%s`", input));
+    auto results = input.findSplit("=>");
+    auto typedecl = results[0] ~ results[1];
+    auto tbody = results[2].strip;
+    auto ast = Systemic(typedecl);
+    return tuple(parse(ast), tbody);
 }
 
 
